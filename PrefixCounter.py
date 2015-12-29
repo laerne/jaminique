@@ -1,22 +1,6 @@
 #/usr/bin/env python3
-import fileinput
 
-def loadDictionary( *filepaths, weightTransformationFct=(lambda x: x) ):
-    dictionary = {}
-    for line in fileinput.input( filepaths ):
-        item = line.split('#')[0].strip()
-        tokens = item.split(':')
-        word = tokens[0]
-        if word == '':
-            continue
-        weight = weightTransformationFct( tokens[1] if len( tokens ) > 2 else 1 )
-        if word in dictionary:
-            dictionary[word] += weight
-        else:
-            dictionary[word] = weight
-    return dictionary
-
-class PrefixCounter:
+class PrefixCounter(object):
     def __init__( self,
             dictionary,
             minlength = 0,
