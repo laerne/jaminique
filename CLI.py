@@ -1,3 +1,4 @@
+#/usr/bin/env python3
 import PrefixCounter
 import Loader
 import Generator
@@ -27,12 +28,17 @@ argparser.add_argument( '-p', '--min-perpexity', action='store', type=float, def
         help='tolerance threshold to discard words that matches too closely the examples (default 0.0)' )
 argparser.add_argument( '-P', '--max-perpexity', action='store', type=float, default=10,
         help='tolerance threshold to discard ugly words (default 10.0)' )
+argparser.add_argument( '-S', '--seed', action='store', type=int,
+        help='seed for the random generator.  If this option is not provided, the current system time is used as a seed.' )
 argparser.add_argument( 'dictionary', metavar='FILE', action='store', nargs='*',
         default=['namelists/viking_male.txt','namelists/viking_female.txt','namelists/viking_unknownGender.txt'],
         help='Dictonary files to learn names from' )
 
 args = argparser.parse_args()
 
+if args.seed:
+    import random
+    random.seed(args.seed)
 dictionary = Loader.loadDictionary( *args.dictionary )
 prefixCounter = PrefixCounter.PrefixCounter( dictionary, minlength=0, maxlength=args.ngram_size, generateDelimiterSymbols=True )
 generator = Generator.SimpleLagrangeGenerator( prefixCounter, minlength = args.min_length, maxlength = args.max_length )
