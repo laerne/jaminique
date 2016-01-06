@@ -1,5 +1,6 @@
-import gi
-gi.require_version('Gtk','3.0')
+#/usr/bin/env python3
+from gi import require_version
+require_version('Gtk','3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 import os.path
@@ -21,8 +22,31 @@ class GUIHandler(object):
         Gtk.main_quit()
         return True
     
-    def on_add_dictionary( self, dialog ):
-        dialog.show()
+    def on_add_dictionary( self, button ):
+        dictionary_data = self.stores["dictionaries"]
+        dialog = Gtk.FileChooserDialog(
+                "Open SVG file",
+                None,
+                Gtk.FileChooserAction.OPEN,
+                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK),
+                )
+        dialog.set_select_multiple(True)
+        
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            for filename in dialog.get_filenames():
+                cachedDictionary = Loader.loadDictionary( filename )
+                
+                name = os.path.splitext( os.path.basename( filename ) )[0]
+                wordcount = len( cachedDictionary )
+                weightcount = sum( cachedDictionary.values() )
+                
+                dictionary_data.append( None, (filename,wordcount,weightcount,name,True) )
+                self.dictionaries[ filename ] = cachedDictionary
+        elif response == Gtk.ResponseType.CANCEL:
+            pass
+        dialog.destroy()
+
         return True
     
     def on_remove_dictionary( self, selection ):
@@ -32,32 +56,6 @@ class GUIHandler(object):
             dictionary_data.remove( row_iter )
         return True
 
-    def on_delete_dictfile_chooser_dialog( self, dialog, eventType ):
-        dialog.hide()
-        return True
-    
-    def on_dictfile_chooser_close_button_clicked( self, dialog ):
-        dialog.hide()
-        return True
-    
-    def on_dictfile_chooser_add_button_clicked( self, dialog ):
-        dictionary_data = self.stores["dictionaries"]
-
-        for uri in dialog.get_uris():
-            assert uri[:7] == "file://"
-            filepath = uri[7:]
-            cachedDictionary = Loader.loadDictionary( filepath )
-            
-            name = os.path.splitext( os.path.basename( filepath ) )[0]
-            wordcount = len( cachedDictionary )
-            weightcount = sum( cachedDictionary.values() )
-            
-            dictionary_data.append( None, (filepath,wordcount,weightcount,name,True) )
-            self.dictionaries[ filepath ] = cachedDictionary
-            
-        dialog.hide()
-        return True
-    
     def on_is_used_selector_toggled( self, toggleButton, row_path ):
         dictionary_data = self.stores["dictionaries"]
         row_iter = dictionary_data.get_iter( row_path )
@@ -86,7 +84,7 @@ class GUIHandler(object):
     
 
 def simpleLangrangeGenerate( dictionary, numberOfGenerations ):
-    prefixCounter = PrefixCounter.PrefixCounter( dictionary )
+    prefixCounter = PrefixCounter.PrefixCounter( dictionary, generateDelimiterSymbols=True )
     generator = Generator.SimpleLagrangeGenerator( prefixCounter )
     
     n = 0

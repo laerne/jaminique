@@ -23,7 +23,6 @@ def dichotomicfind( random_access_collection, element ):
 
 
 
-random.seed(1)
 class DiscretePicker:
     def __init__( self, probabilities ):
         self.cumulative_probabilities = []
