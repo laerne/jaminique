@@ -1,6 +1,19 @@
 #/usr/bin/env python3
 
 import random
+import sys
+
+def printerror( label, *msgs, **kwargs ):
+    if 'file' not in kwargs:
+        kwargs['file'] = sys.stderr
+    print( label, *msgs, **kwargs )
+
+def warn( *msgs, **kwargs ):
+    printerror( "Warning:", *msgs, **kwargs )
+    
+def fail( *msgs, **kwargs ):
+    printerror( "Error:", *msgs, **kwargs )
+    sys.exit(1)
 
 #verbosityLevel = 1
 #def printVerbose( verbosity, *items ):
