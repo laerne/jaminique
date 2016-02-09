@@ -1,5 +1,6 @@
 #/usr/bin/env python3
 import fileinput
+from utilities import warn, fail
 
 def loadDictionary( *filepaths, weightTransformationFct=(lambda x: x) ):
     dictionary = {}
@@ -9,7 +10,13 @@ def loadDictionary( *filepaths, weightTransformationFct=(lambda x: x) ):
         word = tokens[0]
         if word == '':
             continue
-        weight = weightTransformationFct( tokens[1] if len( tokens ) > 2 else 1 )
+        try:
+            weight = float(tokens[1]) if len( tokens ) > 2 else 1
+        except ValueError as e:
+            from utilities import warn
+            warn( "Incorrect weight value.  Defaulting to 1." )
+            weight = 1
+        weight = weightTransformationFct( weight )
         if word in dictionary:
             dictionary[word] += weight
         else:
