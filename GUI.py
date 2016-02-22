@@ -51,7 +51,7 @@ class GUIHandler(object):
         wordcount = len( cachedDictionary )
         weightcount = sum( cachedDictionary.values() )
         
-        dictionary_data.append( None, (filepath,wordcount,weightcount,name,True) )
+        dictionary_data.append( None, (filepath,wordcount,weightcount,name) )
         self.dictionaries[ filepath ] = cachedDictionary
             
         
@@ -80,39 +80,26 @@ class GUIHandler(object):
         for row_iter in row_iters:
             dictionary_data.remove( row_iter )
         return True
-
-    def on_is_used_selector_toggled( self, toggleButton, row_path ):
-        dictionary_data = self.stores["dictionaries"]
-        row_iter = dictionary_data.get_iter( row_path )
-        former_value = dictionary_data.get_value( row_iter, 4 )
-        dictionary_data.set( row_iter, [4], [not former_value] )
-        return True
-
-    def on_toggle_select_all_dictionaries( self, selection ):
-        used_dictionaries_filter_list = []
-        def test_if_at_least_one_dictionary_is_used( model, path, iter, accumulator ):
-            is_used = model.get_value( iter, 4 )
-            name = model.get_value( iter, 3 )
-            if is_used:
-                accumulator.append( name )
-        self.stores["dictionaries"].foreach( test_if_at_least_one_dictionary_is_used, used_dictionaries_filter_list )
         
-        def update_used_dictionaries( model, path, iter, new_status ):
-            model.set_value( iter, 4, new_status )
-        if len(used_dictionaries_filter_list) > 0:
-            self.stores["dictionaries"].foreach( update_used_dictionaries, False )
-        else:
-            self.stores["dictionaries"].foreach( update_used_dictionaries, True )
-    
-    
-    def on_generate_button_clicked( self, button ):
+    def on_edit_dictionary( self, selection ):
+        dictionary_data, row_paths =  selection.get_selected_rows()
+        names_store = self.stores["generated_names"]
+        names_store.clear()
+
+        for path in row_paths:
+            filepath = dictionary_data.get_value( dictionary_data.get_iter( path ), 0 )
+            for word, weight in self.dictionaries[ filepath ].items():
+                names_store.append((word,weight))
+            
+        #names_store.append(("",0.0))
+
+    def on_generate_button_clicked( self, selection ):
         merged = {}
-        def foreach_dictionary_data( model, path, iter, accumulator ):
-            is_used = model.get_value( iter, 4 )
+        def merge_dictionary( model, path, iter, accumulator ):
             filepath = model.get_value( iter, 0 )
-            if is_used:
-                Loader.mergeDictionary( accumulator, self.dictionaries[filepath] )
-        self.stores["dictionaries"].foreach( foreach_dictionary_data, merged )
+            Loader.mergeDictionary( accumulator, self.dictionaries[filepath] )
+            
+        selection.selected_foreach( merge_dictionary, merged )
         
         if len(merged) == 0:
             print("Nothing to generate from")
@@ -171,11 +158,13 @@ class GUIHandler(object):
                 for row in names_store:
                     yield( row[0], row[1] )
             Writer.writeDictionaryFromIterator( filename, store_iterator() )
+            self.load_dictionary( filename )
         elif response == Gtk.ResponseType.CANCEL:
             pass
         dialog.destroy()
 
         return True
+    
     
 
 def simpleLangrangeGenerate( dictionary, numberOfGenerations ):
@@ -201,11 +190,11 @@ def runGUI():
     glade_path = os.path.join( glade_prefix, "main_ui.glade" )
     builder = Gtk.Builder.new_from_file( glade_path )
     
-    window_ids = ["main_window","dictfile_chooser"]
+    window_ids = [ "main_window","dictfile_chooser" ]
     windows = dict(map(   lambda wid: (wid,builder.get_object(wid)),   window_ids   ))
-    store_ids = ["dictionaries","generated_names", "generation_algorithms"]
+    store_ids = [ "dictionaries","generated_names", "generation_algorithms" ]
     stores = dict(map(   lambda wid: (wid,builder.get_object(wid)),   store_ids   ))
-    inputs_ids = ["number_to_generate_spinner"]
+    inputs_ids = [ "number_to_generate_spinner" ]
     inputs = dict(map(   lambda wid: (wid,builder.get_object(wid)),   inputs_ids   ))
     
     handler = GUIHandler(windows,stores,inputs)

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.19.0 -->
+<!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkTreeStore" id="dictionaries">
@@ -12,12 +12,7 @@
       <column type="gfloat"/>
       <!-- column-name name -->
       <column type="gchararray"/>
-      <!-- column-name is_used -->
-      <column type="gboolean"/>
     </columns>
-  </object>
-  <object class="GtkTreeModelFilter" id="active_dictionaries_filter">
-    <property name="child_model">dictionaries</property>
   </object>
   <object class="GtkListStore" id="generated_names">
     <columns>
@@ -157,7 +152,7 @@
                     <property name="receives_default">True</property>
                     <property name="use_stock">True</property>
                     <property name="always_show_image">True</property>
-                    <signal name="clicked" handler="on_generate_button_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_generate_button_clicked" object="dictionaries_view-selection" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -202,25 +197,6 @@
                         <child internal-child="selection">
                           <object class="GtkTreeSelection" id="dictionaries_view-selection">
                             <property name="mode">multiple</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkTreeViewColumn" id="column_is_used">
-                            <property name="clickable">True</property>
-                            <property name="alignment">0.079999998211860657</property>
-                            <signal name="clicked" handler="on_toggle_select_all_dictionaries" object="dictionaries_view-selection" swapped="no"/>
-                            <child>
-                              <object class="GtkCellRendererToggle" id="is_used_selector">
-                                <property name="cell_background_gdk">#000000000000</property>
-                                <property name="cell_background_rgba">rgba(0,0,0,0)</property>
-                                <property name="xpad">2</property>
-                                <property name="ypad">2</property>
-                                <signal name="toggled" handler="on_is_used_selector_toggled" swapped="no"/>
-                              </object>
-                              <attributes>
-                                <attribute name="active">4</attribute>
-                              </attributes>
-                            </child>
                           </object>
                         </child>
                         <child>
@@ -348,6 +324,7 @@
                         <property name="use_stock">True</property>
                         <property name="image_position">top</property>
                         <property name="always_show_image">True</property>
+                        <signal name="clicked" handler="on_edit_dictionary" object="dictionaries_view-selection" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
