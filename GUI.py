@@ -24,8 +24,7 @@ import os.path
 from sys import argv
 from glob import iglob
 
-import PrefixCounter
-import Generator
+import SmoothMarkov
 import Loader
 import Writer
 from utilities import warn, fail
@@ -168,8 +167,7 @@ class GUIHandler(object):
     
 
 def simpleLangrangeGenerate( dictionary, numberOfGenerations ):
-    prefixCounter = PrefixCounter.PrefixCounter( dictionary, generateDelimiterSymbols=True )
-    generator = Generator.SimpleLagrangeGenerator( prefixCounter )
+    generator = SmoothMarkov.Generator( dictionary, generateDelimiterSymbols=True )
     
     n = 0
     while n < numberOfGenerations:
@@ -182,7 +180,7 @@ def preloadNamelists( gui_handler, namelists_folder = None ):
         namelists_folder = os.path.join( os.path.dirname( argv[0] ), "namelists" )
     namelists_folder = os.path.abspath( namelists_folder )
     print( namelists_folder )
-    for filepath in iglob( os.path.join( namelists_folder, "*.txt" ) ):
+    for filepath in sorted( iglob( os.path.join( namelists_folder, "*.txt" ) ) ):
         gui_handler.load_dictionary(filepath)
     
 
