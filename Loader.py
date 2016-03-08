@@ -17,13 +17,17 @@
 import fileinput
 from utilities import warn, fail
 
-def loadDictionary( *filepaths, weightTransformationFct=(lambda x: x) ):
+def loadDictionary( *filepaths,
+        weightTransformationFct=(lambda x: x),
+        forceLowerCase = False ):
     dictionary = {}
     with fileinput.input( filepaths, openhook=fileinput.hook_encoded("UTF-8") ) as lines:
         for line in lines:
             item = line.split('#')[0].strip()
             tokens = item.split(':')
             word = tokens[0]
+            if forceLowerCase:
+                word = word.lower()
             if word == '':
                 continue
             try:
