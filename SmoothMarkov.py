@@ -139,8 +139,8 @@ class Generator(object):
             minNGramLength = 0,
             maxNGramLength = 2,
             generateDelimiterSymbols = True,
-            minNameLength=3,
-            maxNameLength=24 ):
+            minNameLength=0,
+            maxNameLength=256 ):
 
         self.prefixCounter_ = PrefixCounter( dictionary,
                 minlength = minNGramLength,

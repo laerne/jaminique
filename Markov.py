@@ -20,10 +20,8 @@ class TransitionTable(object):
     def __init__( self,
             dictionary,
             length = 2,
-            generateDelimiterSymbols = True,
             ):
         assert type(length) == int
-        assert type(generateDelimiterSymbols) == bool
 
         self.length_ = length
         self.characters_ = set()
@@ -31,7 +29,6 @@ class TransitionTable(object):
         self.table_ = buildTransitionTable(
                 dictionary=dictionary,
                 length=length,
-                generateDelimiterSymbols=generateDelimiterSymbols,
                 encounteredCharacters= self.characters_
                 )
         self.characters_ = sorted( self.characters_ )
@@ -79,13 +76,11 @@ def normalizeStr( c, l=4 ):
 def buildTransitionTable(
         dictionary,
         length = 2,
-        generateDelimiterSymbols = True,
         encounteredCharacters = None ):
 
     prefixCounters = {}
     for word, weight in dictionary.items():
-        if generateDelimiterSymbols:
-            word = '^' + word + '$'
+        word = '^' + word + '$'
         ngram = ''
         for c in word:
             if encounteredCharacters != None:
@@ -110,14 +105,11 @@ class Generator(object):
             self,
             dictionary,
             nGramLength = 2,
-            generateDelimiterSymbols = True,
-            minNameLength=3,
-            maxNameLength=24 ):
+            minNameLength=0,
+            maxNameLength=256 ):
 
         self.nGramLength_ = nGramLength
-        self.transitionTable_ = TransitionTable( dictionary,
-                length = nGramLength+1,
-                generateDelimiterSymbols = generateDelimiterSymbols )
+        self.transitionTable_ = TransitionTable( dictionary, length = nGramLength+1 )
         self.minNameLength_ = minNameLength
         self.maxNameLength_ = maxNameLength
         
