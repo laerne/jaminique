@@ -1,0 +1,31 @@
+{ "verbose" : false
+, "number" : 1
+, "seed" : "auto"
+, "dictionary" :
+    { "uniform" : false
+    , "ignore-case" : false
+    , "files" :
+      [ "namelists/viking_female.txt"
+      , "namelists/viking_male.txt"
+      , "namelists/viking_unknownGender.txt"
+      ]
+    }
+, "generator" :
+    { "default" : "markov"
+    , "markov" :
+        { "min-perpexity" : 0.0
+        , "max-perpexity" : 20.0
+        , "ngram-size" : 3
+        }
+    , "smooth-markov" :
+        { "min-perpexity" : 4.0
+        , "max-perpexity" : 12.0
+        , "ngram-size" : 2
+        }
+    }
+, "filters" :
+    { "min-length" : 3
+    , "max-length" : 24
+    , "original" : true
+    }
+}
