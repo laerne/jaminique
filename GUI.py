@@ -22,20 +22,23 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 import os.path
 from sys import argv
-from glob import iglob
 
 import SmoothMarkov
 import Loader
 import Writer
+import Selector
 from utilities import warn, fail
 
 glade_prefix = os.path.join( os.path.dirname( argv[0] ), "glade" )
 
+
+#The GUI data rule: Data in arguments (of type Selector.Arguments) cannot be changed
+#   EXCEPT WHEN the data is a duplicate/inializer of a GUI value, that is updated when the GUI is.
+
 class GUIHandler(object):
-    def __init__( self, windows, stores, inputs ):
-        self.windows = windows
-        self.stores = stores
-        self.inputs = inputs
+    def __init__( self, builder, arguments ):
+        self.builder = builder
+        self.arguments = arguments
         self.dictionaries = {}
         
     def on_main_window_destroy( self, window ):
@@ -43,7 +46,7 @@ class GUIHandler(object):
         return True
         
     def load_dictionary( self, filepath ):
-        dictionary_data = self.stores["dictionaries"]
+        dictionary_data = self.builder.get_object("dictionaries")
         cachedDictionary = Loader.loadDictionary( filepath )
         
         name = os.path.splitext( os.path.basename( filepath ) )[0]
@@ -57,7 +60,7 @@ class GUIHandler(object):
     def on_add_dictionary( self, selection ):
         dialog = Gtk.FileChooserDialog(
                 "Open dictionary file",
-                self.windows["main_window"],
+                self.builder.get_object("main_window"),
                 Gtk.FileChooserAction.OPEN,
                 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK),
                 )
@@ -82,7 +85,7 @@ class GUIHandler(object):
         
     def on_edit_dictionary( self, selection ):
         dictionary_data, row_paths =  selection.get_selected_rows()
-        names_store = self.stores["generated_names"]
+        names_store = self.builder.get_object("generated_names")
         names_store.clear()
 
         for path in row_paths:
@@ -104,19 +107,22 @@ class GUIHandler(object):
             print("Nothing to generate from")
             return True
         
-        numberOfGenerations = self.inputs["number_to_generate_spinner"].get_value_as_int()
-        for perpexity, name in simpleLangrangeGenerate( merged, numberOfGenerations ):
-            self.stores["generated_names"].append((name,perpexity))
+        numberOfGenerations = self.builder.get_object("number_to_generate_spinner").get_value_as_int()
+        
+        dictionary, tokenizer, generator, filters = Selector.selectDictionaryTokenizerGeneratorFilters( self.arguments )
+        for n in range(numberOfGenerations):
+            perpexity, name = generator.generateName()
+            self.builder.get_object("generated_names").append((name,perpexity))
         
         return True
 
     def on_entry_perplexity_edited( self, cell, iterstring, value  ):
-        names_store = self.stores["generated_names"]
+        names_store = self.builder.get_object("generated_names")
         iter = names_store.get_iter( iterstring )
         names_store.set_value( iter, 1, value )
         
     def on_entry_name_edited( self, cell, iterstring, value  ):
-        names_store = self.stores["generated_names"]
+        names_store = self.builder.get_object("generated_names")
         iter = names_store.get_iter( iterstring )
         names_store.set_value( iter, 0, value )
         names_store.set_value( iter, 1, 0.0 )
@@ -138,13 +144,13 @@ class GUIHandler(object):
         return True
         
     def on_remove_all_entries( self, selection ):
-        self.stores["generated_names"].clear()
+        self.builder.get_object("generated_names").clear()
         return True
         
     def on_save_entries( self, selection ):
         dialog = Gtk.FileChooserDialog(
                 "Save generated names",
-                self.windows["main_window"],
+                self.builder.get_object("main_window"),
                 Gtk.FileChooserAction.SAVE,
                 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT),
                 )
@@ -153,7 +159,7 @@ class GUIHandler(object):
         if response == Gtk.ResponseType.ACCEPT:
             filename = dialog.get_filename()
             def store_iterator():
-                names_store = self.stores["generated_names"]
+                names_store = self.builder.get_object("generated_names")
                 for row in names_store:
                     yield( row[0], row[1] )
             Writer.writeDictionaryFromIterator( filename, store_iterator() )
@@ -164,43 +170,39 @@ class GUIHandler(object):
 
         return True
     
-    
-
-def simpleLangrangeGenerate( dictionary, numberOfGenerations ):
-    generator = SmoothMarkov.Generator( dictionary, generateDelimiterSymbols=True )
-    
-    n = 0
-    while n < numberOfGenerations:
-        namePerplexity, name = generator.generateName()
-        yield (namePerplexity, name)
-        n +=1
-
-def preloadNamelists( gui_handler, namelists_folder = None ):
-    if namelists_folder == None:
-        namelists_folder = os.path.join( os.path.dirname( argv[0] ), "namelists" )
-    namelists_folder = os.path.abspath( namelists_folder )
-    print( namelists_folder )
-    for filepath in sorted( iglob( os.path.join( namelists_folder, "*.txt" ) ) ):
-        gui_handler.load_dictionary(filepath)
-    
-
-def runGUI():
+def buildGUI( arguments = None ):
+    if arguments == None:
+        arguments = Selector.Arguments()
+        
     glade_path = os.path.join( glade_prefix, "main_ui.glade" )
     builder = Gtk.Builder.new_from_file( glade_path )
+    handler = GUIHandler( builder, arguments )
     
-    window_ids = [ "main_window","dictfile_chooser" ]
-    windows = dict(map(   lambda wid: (wid,builder.get_object(wid)),   window_ids   ))
-    store_ids = [ "dictionaries","generated_names", "generation_algorithms" ]
-    stores = dict(map(   lambda wid: (wid,builder.get_object(wid)),   store_ids   ))
-    inputs_ids = [ "number_to_generate_spinner" ]
-    inputs = dict(map(   lambda wid: (wid,builder.get_object(wid)),   inputs_ids   ))
-    
-    handler = GUIHandler(windows,stores,inputs)
     builder.connect_signals( handler )
-    preloadNamelists( handler )
-    windows["main_window"].show_all()
+    builder.get_object("main_window").show_all()
     
-    Gtk.main()
+    return handler, builder
 
-if __name__ == '__main__':
-    runGUI()
+def process( arguments ):
+    handler, builder = buildGUI( arguments )
+    
+    for filepath in sorted( arguments.get("dictionary","files",default=[]) ):
+        handler.load_dictionary( filepath )
+
+    selection = builder.get_object("dictionaries_view-selection")
+    selection.select_all()
+    
+    numberToGenerate = arguments.get('number',default=0)
+    if numberToGenerate == 0:
+        builder.get_object("number_to_generate_spinner").set_value( 1 )
+        arguments.set(1,'number')
+    else:
+        builder.get_object("number_to_generate_spinner").set_value( numberToGenerate )
+        handler.on_generate_button_clicked( selection )
+    
+    ##TODO set the counter box to the correct value based on the argument
+    ##TODO Bind the value of those boxes with the values in the "arguments" store
+    
+    
+        
+    Gtk.main()

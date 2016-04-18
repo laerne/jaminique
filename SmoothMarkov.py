@@ -179,7 +179,7 @@ class Generator(object):
             self.scorer_.reset()
         
         name=name[1:]
-        namePerplexity = (probabilityOfName**(-1/len(name)))
+        namePerplexity = (probabilityOfName**(-1/len(name))) if len(name)>0 else 0
         
         return (namePerplexity, name)
         

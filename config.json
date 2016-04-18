@@ -1,6 +1,9 @@
 { "verbose" : false
 , "number" : 1
 , "seed" : "auto"
+, "gui" :
+    { "enabled" : true
+    }
 , "dictionary" :
     { "uniform" : false
     , "ignore-case" : false

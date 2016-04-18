@@ -159,7 +159,7 @@ def selectFilters( argumentDictionary ):
     return []
 
 def selectDictionaryTokenizerGeneratorFilters( argumentDictionary ):
-    #Should be the tokenizer
+    #Should be done by the tokenizer
     dictionary = Loader.loadDictionary(
             *argumentDictionary.get('dictionary','files'),
             uniformWeights = argumentDictionary.get('dictionary','uniform'),
