@@ -17,6 +17,30 @@
 import fileinput
 from utilities import warn, fail
 
+import os.path
+from glob import glob, iglob
+
+
+def selectFilesFromDirs( *filepaths ):
+    candidates = list( filepaths )
+    dictionaries = []
+    while len(candidates) > 0:
+        candidate = candidates.pop(0)
+        if os.path.isdir( candidate ):
+            for subfile in subfiles(candidate):
+                candidates.append( subfiles )
+        elif os.path.splitext( candidate )[1] == '.txt':
+            dictionaries.append( candidate )
+        else:
+            pass
+            
+def loadDictionaryDir( *filepaths,
+        uniformWeights = False,
+        forceLowerCase = False ):
+    actualDictionaryPaths = selectFilesFromDirs( *filepaths )
+    return loadDictionary( *actualDictionaryPaths )
+            
+
 def loadDictionary( *filepaths,
         uniformWeights = False,
         forceLowerCase = False ):

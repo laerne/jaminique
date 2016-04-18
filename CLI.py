@@ -31,6 +31,7 @@ argparsedNameToPathMap = {
     'number' : ['number'],
     'seed' : ['seed'],
     'verbose' : ['verbose'],
+    'gui' : ['gui','enabled'],
     'uniform' : ['dictionary','uniform'],
     'ignore_case' : ['dictionary','ignore-case'],
     'min_length' : ['filters','min-length'],
@@ -62,6 +63,14 @@ argparser = argparse.ArgumentParser(
 #general options
 argparser.add_argument( '-n', '--number', action='store', type=int,
         help="number of names to generate" )
+argparser.add_argument( '-S', '--seed', action='store', type=int,
+        help="seed for the random generator.  If this option is not provided, the current system time is used as a seed." )
+argparser.add_argument( '-G', '--gui', action='store_true', default=None,
+        help="Load the program with the GUI." )
+argparser.add_argument( '-B', '--batch', action='store_false', dest='gui' )
+argparser.add_argument( '-v', '--verbose', action='store_true', default=None,
+        help="print additional information like the perplexity." )
+argparser.add_argument( '-q', '--quiet', action='store_false', dest='verbose' )
 argparser.add_argument( '-u', '--uniform', action='store_true', default=None,
         help="ignore possible word weight and set them all to 1" )
 argparser.add_argument( '--weighted', action='store_false', dest='uniform' )
@@ -76,11 +85,6 @@ argparser.add_argument( '-o', '--original', action='store_true', default=None,
         help="discard words already existing in the dictionary" )
 argparser.add_argument( '-a', '--any', action='store_false', dest='original',
         help="allow to generate words already existing in the dictionary" )
-argparser.add_argument( '-S', '--seed', action='store', type=int,
-        help="seed for the random generator.  If this option is not provided, the current system time is used as a seed." )
-argparser.add_argument( '-v', '--verbose', action='store_true', default=None,
-        help="print additional information like the perplexity." )
-argparser.add_argument( '-q', '--quiet', action='store_false', dest='verbose' )
 argparser.add_argument( '-g', '--generator', metavar = 'ALGO', action='store',
         choices=['smooth-markov','markov'],
         help="""algorithm used to generate the names.
@@ -98,10 +102,14 @@ argparser.add_argument( 'files', metavar='FILE', action='store', nargs='*', defa
 arguments = Selector.loadDefaultArguments()
 arguments.update( argparsedToArgument( argparser.parse_args() ) )
 
-seedValue = arguments.get('seed')
-if seedValue != 'auto':
+seedValue = arguments.get('seed',default='auto')
+if type(seedValue) == int:
     import random
     random.seed(int(seedValue))
 
-Batch.process( arguments )
+if arguments.get('gui','enabled',default=False):
+    GUI.process( arguments )
+else:
+    Batch.process( arguments )
+
 
