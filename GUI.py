@@ -47,7 +47,7 @@ class GUIHandler(object):
         
     def load_dictionary( self, filepath ):
         dictionary_data = self.builder.get_object("dictionaries")
-        cachedDictionary = Loader.loadDictionary( filepath )
+        cachedDictionary = Loader.loadDictionary( filepath ) #TODO have cached dicts match Selector's Loader
         
         name = os.path.splitext( os.path.basename( filepath ) )[0]
         wordcount = len( cachedDictionary )
@@ -55,6 +55,10 @@ class GUIHandler(object):
         
         dictionary_data.append( None, (filepath,wordcount,weightcount,name) )
         self.dictionaries[ filepath ] = cachedDictionary
+
+        arguments_files = self.arguments.get( 'dictionary', 'files' )
+        if filepath not in arguments_files:
+            arguments_files .append( filepath )
             
         
     def on_add_dictionary( self, selection ):
@@ -96,20 +100,17 @@ class GUIHandler(object):
         #names_store.append(("",0.0))
 
     def on_generate_button_clicked( self, selection ):
-        merged = {}
-        def merge_dictionary( model, path, iter, accumulator ):
-            filepath = model.get_value( iter, 0 )
-            Loader.mergeDictionary( accumulator, self.dictionaries[filepath] )
+        dictionary_data, selected_paths = selection.get_selected_rows()
+        selected_files = []
+        for path in selected_paths:
+            iterator = dictionary_data.get_iter( path )
+            value = dictionary_data.get_value( iterator, 0 )
+            selected_files.append( value )
+        self.arguments.set( selected_files, 'dictionary', '*selected' )
             
-        selection.selected_foreach( merge_dictionary, merged )
-        
-        if len(merged) == 0:
-            print("Nothing to generate from")
-            return True
-        
         numberOfGenerations = self.builder.get_object("number_to_generate_spinner").get_value_as_int()
-        
         dictionary, tokenizer, generator, filters = Selector.selectDictionaryTokenizerGeneratorFilters( self.arguments )
+        
         for n in range(numberOfGenerations):
             perpexity, name = generator.generateName()
             self.builder.get_object("generated_names").append((name,perpexity))
