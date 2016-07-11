@@ -64,6 +64,9 @@ class Arguments(object):
     def subArguments( self, *args ):
         data = self.get( *args, default={} )
         return Arguments( data )
+        
+    def __str__( self ):
+        return "Arguments(%s)" % str( self.args )
 
     #Todo clean the tree when setting to 'None'
     def set( self, value, *args ):
@@ -160,8 +163,9 @@ def selectFilters( argumentDictionary ):
 
 def selectDictionaryTokenizerGeneratorFilters( argumentDictionary ):
     #Should be done by the tokenizer
+    files = argumentDictionary.get('dictionary','*selected') or argumentDictionary.get('dictionary','files')
     dictionary = Loader.loadDictionary(
-            *argumentDictionary.get('dictionary','files'),
+            *files,
             uniformWeights = argumentDictionary.get('dictionary','uniform'),
             forceLowerCase = argumentDictionary.get('dictionary','ignore-case')
             )
