@@ -73,6 +73,7 @@
                     <property name="model">generation_algorithms</property>
                     <property name="active">0</property>
                     <property name="id_column">0</property>
+                    <signal name="changed" handler="on_select_generation_algo" swapped="no"/>
                     <child>
                       <object class="GtkCellRendererText" id="combo_algo">
                         <property name="cell_background_gdk">#000000000000</property>
