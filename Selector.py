@@ -1,6 +1,7 @@
-import SmoothMarkov
-import Markov
 import Loader
+import MainFilters
+import Markov
+import SmoothMarkov
 import json
 from copy import deepcopy
 
@@ -65,9 +66,6 @@ class Arguments(object):
         data = self.get( *args, default={} )
         return Arguments( data )
         
-    def __str__( self ):
-        return "Arguments(%s)" % str( self.args )
-
     #Todo clean the tree when setting to 'None'
     def set( self, value, *args ):
         current = self.args
@@ -138,7 +136,7 @@ def selectGenerator( argumentDictionary, dictionary ):
     args = loadDefaultArguments()
     args.update( argumentDictionary )
     
-    algoName = args.get( "generator", "default", default="markov" )
+    algoName = args.get( 'default', default="markov" )
     
     if algoName == "markov":
         generator = Markov.Generator( 
@@ -158,8 +156,24 @@ def selectGenerator( argumentDictionary, dictionary ):
     return generator
 
 # Return a list of filter to discard some generated results
-def selectFilters( argumentDictionary ):
-    return []
+def selectFilters( argumentDictionary, dictionary ):
+
+    filters = []
+
+    #OriginalOnlyFilter
+    if argumentDictionary.get( 'original' ) == True:
+        filters.append(   MainFilters.OriginalOnlyFilter( dictionary )   )
+
+    #NameLengthFilter
+    minLength = argumentDictionary.get( 'min-length' )
+    maxLength = argumentDictionary.get( 'max-length' )
+    if minLength > 0 or maxLength < float("inf"):
+        minLength = minLength or 0
+        maxLength = maxLength or float("inf")
+        filters.append(   MainFilters.NameLengthFilter( minLength, maxLength )   )
+
+    return MainFilters.AggregateFilter( filters )
+    
 
 def selectDictionaryTokenizerGeneratorFilters( argumentDictionary ):
     #Should be done by the tokenizer
@@ -171,6 +185,6 @@ def selectDictionaryTokenizerGeneratorFilters( argumentDictionary ):
             )
     tokenizer = selectTokenizer( argumentDictionary.subArguments('tokenizer'), dictionary )
     generator = selectGenerator( argumentDictionary.subArguments('generator'), dictionary )
-    filters = selectFilters( None )
+    filters = selectFilters( argumentDictionary.subArguments('filters'), dictionary )
     return dictionary, tokenizer, generator, filters
 

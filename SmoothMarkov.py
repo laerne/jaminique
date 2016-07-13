@@ -181,7 +181,7 @@ class Generator(object):
         name=name[1:]
         namePerplexity = (probabilityOfName**(-1/len(name))) if len(name)>0 else 0
         
-        return (namePerplexity, name)
+        return ( namePerplexity, name )
         
 
 
@@ -189,4 +189,5 @@ def normalizeStr( c, l=4 ):
     c = repr(c)[1:-1][:l]
     c = " "*(l-len(c)) + c
     return c
+
 

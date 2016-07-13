@@ -80,6 +80,23 @@ class GUIHandler(object):
 
         return True
     
+    def on_select_generation_algo( self, combo ):
+        active_iter = combo.get_active_iter()
+        if active_iter == None:
+            dialog = Gtk.MessageDialog(
+                    self.builder.get_object("main_window"),
+                    0,
+                    Gtk.MessageType.WARNING,
+                    Gtk.ButtonTypes.OK,
+                    "No generation algorithm selected.");
+            dialog.run()
+            dialog.destroy()
+            return True
+        else:
+            name = combo.get_model().get_value( active_iter, 0 )
+            self.arguments.set( name, 'generator', 'default' )
+        return True
+    
     def on_remove_dictionary( self, selection ):
         dictionary_data, row_paths =  selection.get_selected_rows()
         row_iters = list(map( lambda path: dictionary_data.get_iter( path ), row_paths ))

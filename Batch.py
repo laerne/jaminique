@@ -26,8 +26,12 @@ def process( arguments ):
     n = 0
     while n < arguments.get('number',default=1):
         namePerplexity, name = generator.generateName()
+        if not filters.validate( name ):
+            if arguments.get('verbose'):
+                print("%.6f (!) %s" % (namePerplexity, name) )
+            continue
         if arguments.get('verbose'):
-            print("%.6f :: %s" % (namePerplexity, name) )
+            print("%.6f (+) %s" % (namePerplexity, name) )
         else:
             print("%s" % name )
         n +=1
