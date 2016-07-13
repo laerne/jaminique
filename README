@@ -1,0 +1,53 @@
+How to run
+==========
+
+Windows
+-------
+
+* Go to http://www.python.org, and install python 3.4.x, *not* python 3.5.y.  Have files with extension .py launched with python, it will make things easier.
+* Now go to https://sourceforge.net/projects/pygobjectwin32/files and download the latest pygi-aio-3 setup executable.
+* Run the setup executable and install PyGobject.  In the list of gnome packages to install, make sure to install GTK, or you won't be able to run the graphic interface.
+* Launch CLI.py in the repository folder.
+
+If you added the python executable to your PATH environment variable, you can also launch the programe with the terminal.
+
+    U:\some\dir> cd path\to\jaminique
+    U:\path\to\jaminique> python CLI.py
+
+GNU/Linux
+---------
+
+Install python3, as well as pygobject and gtk3.
+For Ubuntu users these are the packages `python3`, `python3-gi` and `libgtk-3-0`.
+
+    $ sudo apt-get install python3 python3-gi libgtk-3-0
+
+For fedora users, these are the packages `python3`, `pygobject3` and `gtk3`
+
+    $ sudo dnf install python3 pygobject3 gtk3
+
+Launch `CLI.py` with `python3`.
+If you're using the terminal, go to the project directory and launch with
+
+    $ cd path/to/jaminique
+    $ python3 CLI.py
+
+Terminal options
+================
+
+Run the program in a terminal with the option `--help` to see all options.
+
+Name list file format
+=====================
+
+You can create your own name list file format by simply creating a file holding one name per line.
+The file should be saved using UTF-8 encoding, using UNIX end-of-line delimiters ("\n", not mac's "\r" or window's "\r\n").
+Empty lines are ignored.
+
+You can alternatively create a name list file using the name generator, by adding name entries, editing them and saving the list in a file.
+
+All character are treated equivalently, including withespaces, with the few exceptions below.  None of these character can be escaped so far.
+* '#' : Mark the beginning of a comment, until the end of the line.  Character from '#' to the end of the line are ignored.  Beware that spaces before '#' are significant.
+* ':' : Used to specify a weight to a word.  After entering a name, you can append ':' and a numeric value to change the weight of the word.  Using ':' for any other purpose will make the program fail.
+* '^' : Used by the generator engine to specify the beginning of the word.  Using this character in you name list will cause trouble.
+* '$' : Used by the generator engine to specify the end of the word.  Using this character in you name list will cause trouble.
