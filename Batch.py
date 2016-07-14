@@ -21,18 +21,8 @@ import Selector
 #TODO: CLI only parses options, when running without a gui, switch to this file
 
 def process( arguments ):
-    dictionary, tokenizer, generator, filters = Selector.selectDictionaryTokenizerGeneratorFilters( arguments )
-
-    n = 0
-    while n < arguments.get('number',default=1):
-        namePerplexity, name = generator.generateName()
-        if not filters.validate( name ):
-            if arguments.get('verbose'):
-                print("%.6f (!) %s" % (namePerplexity, name) )
-            continue
-        if arguments.get('verbose'):
-            print("%.6f (+) %s" % (namePerplexity, name) )
-        else:
+    for perplexity, name in Selector.generate( arguments ):
+        #if verbose, Selector.generate already printed the word
+        if not arguments.get('verbose'):
             print("%s" % name )
-        n +=1
 

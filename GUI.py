@@ -126,11 +126,9 @@ class GUIHandler(object):
         self.arguments.set( selected_files, 'dictionary', '*selected' )
             
         numberOfGenerations = self.builder.get_object("number_to_generate_spinner").get_value_as_int()
-        dictionary, tokenizer, generator, filters = Selector.selectDictionaryTokenizerGeneratorFilters( self.arguments )
-        
-        for n in range(numberOfGenerations):
-            perpexity, name = generator.generateName()
-            self.builder.get_object("generated_names").append((name,perpexity))
+        self.arguments.set( numberOfGenerations, 'number' )
+        for perplexity, name in Selector.generate( self.arguments ):
+            self.builder.get_object("generated_names").append((name,perplexity))
         
         return True
 
