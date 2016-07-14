@@ -188,3 +188,17 @@ def selectDictionaryTokenizerGeneratorFilters( argumentDictionary ):
     filters = selectFilters( argumentDictionary.subArguments('filters'), dictionary )
     return dictionary, tokenizer, generator, filters
 
+def generate( arguments ):
+    dictionary, tokenizer, generator, filters = selectDictionaryTokenizerGeneratorFilters( arguments )
+
+    n = 0
+    while n < arguments.get('number',default=1):
+        namePerplexity, name = generator.generateName()
+        if not filters.validate( name ):
+            if arguments.get('verbose'):
+                print("%.6f (!) %s" % (namePerplexity, name) )
+            continue
+        if arguments.get('verbose'):
+            print("%.6f (+) %s" % (namePerplexity, name) )
+        yield namePerplexity, name
+        n +=1
