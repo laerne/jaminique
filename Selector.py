@@ -112,6 +112,13 @@ class Arguments(object):
             else:
                 print( '???', current )
                 raise Exception("Having to reach down unknown type %s" % str(type( current )) )
+
+    def unset( self, *args ):
+        self.set( None, *args )
+
+    def clone( self ):
+        from copy import deepcopy
+        return Arguments( deepcopy( self.args ) )
                 
     def __str__( self ):
         return 'Arguments(' + str( self.args ) + ')'
@@ -128,13 +135,13 @@ def loadDefaultArguments():
         arguments.update( configfile )
     return arguments
 
-def selectTokenizer( argumentDictionary, dictionary ):
+def selectTokenizer( arguments, dictionary ):
     return None
 
 #TODO receive a tokenized dictionary
-def selectGenerator( argumentDictionary, dictionary ):
+def selectGenerator( arguments, dictionary ):
     args = loadDefaultArguments()
-    args.update( argumentDictionary )
+    args.update( arguments )
     
     algoName = args.get( 'default', default="markov" )
     
@@ -156,17 +163,17 @@ def selectGenerator( argumentDictionary, dictionary ):
     return generator
 
 # Return a list of filter to discard some generated results
-def selectFilters( argumentDictionary, dictionary ):
+def selectFilters( arguments, dictionary ):
 
     filters = []
 
     #OriginalOnlyFilter
-    if argumentDictionary.get( 'original' ) == True:
+    if arguments.get( 'original' ) == True:
         filters.append(   MainFilters.OriginalOnlyFilter( dictionary )   )
 
     #NameLengthFilter
-    minLength = argumentDictionary.get( 'min-length' )
-    maxLength = argumentDictionary.get( 'max-length' )
+    minLength = arguments.get( 'min-length' )
+    maxLength = arguments.get( 'max-length' )
     if minLength > 0 or maxLength < float("inf"):
         minLength = minLength or 0
         maxLength = maxLength or float("inf")
@@ -175,17 +182,17 @@ def selectFilters( argumentDictionary, dictionary ):
     return MainFilters.AggregateFilter( filters )
     
 
-def selectDictionaryTokenizerGeneratorFilters( argumentDictionary ):
+def selectDictionaryTokenizerGeneratorFilters( arguments ):
     #Should be done by the tokenizer
-    files = argumentDictionary.get('dictionary','*selected') or argumentDictionary.get('dictionary','files')
+    files = arguments.get('dictionary','*selected') or arguments.get('dictionary','files')
     dictionary = Loader.loadDictionary(
             *files,
-            uniformWeights = argumentDictionary.get('dictionary','uniform'),
-            forceLowerCase = argumentDictionary.get('dictionary','ignore-case')
+            uniformWeights = arguments.get('dictionary','uniform'),
+            forceLowerCase = arguments.get('dictionary','ignore-case')
             )
-    tokenizer = selectTokenizer( argumentDictionary.subArguments('tokenizer'), dictionary )
-    generator = selectGenerator( argumentDictionary.subArguments('generator'), dictionary )
-    filters = selectFilters( argumentDictionary.subArguments('filters'), dictionary )
+    tokenizer = selectTokenizer( arguments.subArguments('tokenizer'), dictionary )
+    generator = selectGenerator( arguments.subArguments('generator'), dictionary )
+    filters = selectFilters( arguments.subArguments('filters'), dictionary )
     return dictionary, tokenizer, generator, filters
 
 def generate( arguments ):
