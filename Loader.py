@@ -34,17 +34,17 @@ def selectFilesFromDirs( *filepaths ):
         else:
             pass
             
-def loadDictionaryDir( *filepaths,
+def loadLexiconDir( *filepaths,
         uniformWeights = False,
         forceLowerCase = False ):
-    actualDictionaryPaths = selectFilesFromDirs( *filepaths )
-    return loadDictionary( *actualDictionaryPaths )
+    actualLexiconPaths = selectFilesFromDirs( *filepaths )
+    return loadLexicon( *actualLexiconPaths )
             
 
-def loadDictionary( *filepaths,
+def loadLexicon( *filepaths,
         uniformWeights = False,
         forceLowerCase = False ):
-    dictionary = {}
+    lexicon = {}
     with fileinput.input( filepaths, openhook=fileinput.hook_encoded("UTF-8") ) as lines:
         for line in lines:
             item = line.split('#')[0].strip()
@@ -61,27 +61,27 @@ def loadDictionary( *filepaths,
                 from utilities import warn
                 warn( "Incorrect weight value.  Defaulting to 1." )
                 weight = 1.0
-            if word in dictionary:
-                dictionary[word] += weight
+            if word in lexicon:
+                lexicon[word] += weight
             else:
-                dictionary[word] = weight
-    return dictionary
+                lexicon[word] = weight
+    return lexicon
 
 
-def mergeDictionaries( *dictionaries ):
+def mergeLexicons( *dictionaries ):
     merged = {}
-    for dictionary in dictionaries:
-        for key, value in dictionary.items():
+    for lexicon in dictionaries:
+        for key, value in lexicon.items():
             if key in merged:
                 merged[key] += value
             else:
                 merged[key] = value
     return merged
     
-def mergeDictionary( editedDictionary, appendedDictionary ):
-    for key, value in appendedDictionary.items():
-        if key in editedDictionary:
-            editedDictionary[key] += value
+def mergeLexicon( editedLexicon, appendedLexicon ):
+    for key, value in appendedLexicon.items():
+        if key in editedLexicon:
+            editedLexicon[key] += value
         else:
-            editedDictionary[key] = value
-    return editedDictionary
+            editedLexicon[key] = value
+    return editedLexicon

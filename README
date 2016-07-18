@@ -49,5 +49,3 @@ You can alternatively create a name list file using the name generator, by addin
 All character are treated equivalently, including withespaces, with the few exceptions below.  None of these character can be escaped so far.
 * '#' : Mark the beginning of a comment, until the end of the line.  Character from '#' to the end of the line are ignored.  Beware that spaces before '#' are significant.
 * ':' : Used to specify a weight to a word.  After entering a name, you can append ':' and a numeric value to change the weight of the word.  Using ':' for any other purpose will make the program fail.
-* '^' : Used by the generator engine to specify the beginning of the word.  Using this character in you name list will cause trouble.
-* '$' : Used by the generator engine to specify the end of the word.  Using this character in you name list will cause trouble.

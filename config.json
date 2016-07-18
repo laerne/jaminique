@@ -1,10 +1,11 @@
 { "verbose" : false
 , "number" : 1
+, "infinity-threshold" : 5000
 , "seed" : "auto"
 , "gui" :
     { "enabled" : true
     }
-, "dictionary" :
+, "lexicon" :
     { "uniform" : false
     , "ignore-case" : false
     , "files" :
@@ -16,14 +17,10 @@
 , "generator" :
     { "default" : "markov"
     , "markov" :
-        { "min-perpexity" : 0.0
-        , "max-perpexity" : 20.0
-        , "ngram-size" : 3
+        { "ngram-size" : 3
         }
     , "smooth-markov" :
-        { "min-perpexity" : 4.0
-        , "max-perpexity" : 12.0
-        , "ngram-size" : 2
+        { "ngram-size" : 2
         }
     }
 , "filters" :

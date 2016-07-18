@@ -14,7 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Jaminique.  If not, see <http://www.gnu.org/licenses/>.
 
-from utilities import discretepick
+from utilities import discretepick, warn, fail
+
+INITIAL_CHAR = '\x02'
+TERMINAL_CHAR = '\x03'
 
 class TransitionTable(object):
     def __init__( self,
@@ -68,6 +71,7 @@ class TransitionTable(object):
             print()
 
 def normalizeStr( c, l=4 ):
+    "Make sure string has give length, by cutting it or prefixing spaces.  Used for TransitionTable.printCountTable."
     c = repr(c)[1:-1][:l]
     c = " "*(l-len(c)) + c
     return c
@@ -80,24 +84,24 @@ def buildTransitionTable(
 
     prefixCounters = {}
     for word, weight in dictionary.items():
-        word = '^' + word + '$'
+        word = (INITIAL_CHAR,) + word + (TERMINAL_CHAR,)
         ngram = ''
         for c in word:
             if encounteredCharacters != None:
                 encounteredCharacters.add( c )
-                ngram += c
-                if len(ngram) > length:
-                    ngram = ngram[1:]
+            ngram += c
+            if len(ngram) > length:
+                ngram = ngram[1:]
 
-                prefix = ngram[:-1]
-                character = ngram[-1]
-                if character == '^':
-                    continue
-                if prefix not in prefixCounters:
-                    prefixCounters[ prefix ] = {}
-                if character not in prefixCounters[ prefix ]:
-                    prefixCounters[ prefix ][ character ] = 0
-                prefixCounters[ prefix ][ character ] += weight
+            prefix = ngram[:-1]
+            character = ngram[-1]
+            if character == INITIAL_CHAR: #Do not allow to generate the initial character
+                continue
+            if prefix not in prefixCounters:
+                prefixCounters[ prefix ] = {}
+            if character not in prefixCounters[ prefix ]:
+                prefixCounters[ prefix ][ character ] = 0
+            prefixCounters[ prefix ][ character ] += weight
     return prefixCounters
 
 class Generator(object):
@@ -114,7 +118,7 @@ class Generator(object):
         self.maxNameLength_ = maxNameLength
         
     def generateName( self ):
-        name = '^'
+        name = INITIAL_CHAR
         probabilityOfName = 1.0
         while len(name) < self.maxNameLength_ + 1:
             prefix = name[-self.nGramLength_:] if self.nGramLength_ > 0 else ''
@@ -122,14 +126,15 @@ class Generator(object):
             
             transitions = list( self.transitionTable_.transitionsForPrefix( prefix ) )
             if not transitions:
-                self.transitionTable_.printCountTable()
+                fail( "Could not find transition for prefix %s" % repr(prefix) )
+                #self.transitionTable_.printCountTable()
                 break
             transitionCharacters, transitionScores = zip( *transitions )
             
             i = discretepick( transitionScores )
             character = transitionCharacters[i]
             
-            if character == '$':
+            if character == TERMINAL_CHAR:
                 if len(name) < self.minNameLength_:
                     continue
                 else:

@@ -16,6 +16,9 @@
 
 from utilities import discretepick
 
+INITIAL_CHAR = '\x02'
+TERMINAL_CHAR = '\x03'
+
 class PrefixCounter(object):
     def __init__( self,
             dictionary,
@@ -87,7 +90,7 @@ def buildPrefixCounters(
     prefixCounters = { i : {} for i in range(minlength,maxlength+1) }
     for word, weight in dictionary.items():
         if generateDelimiterSymbols:
-            word = '^' + word + '$'
+            word = (INITIAL_CHAR,) + word + (TERMINAL_CHAR,)
         ngrams = { j : '' for j in range(minlength+1,maxlength+2) }
         for c in word:
             if encounteredCharacters != None:
@@ -99,7 +102,7 @@ def buildPrefixCounters(
 
                 prefix = ngrams[j][:-1]
                 character = ngrams[j][-1]
-                if character == '^':
+                if character == INITIAL_CHAR:
                     continue
                 i = j-1
                 if prefix not in prefixCounters[i]:
@@ -151,7 +154,7 @@ class Generator(object):
         self.maxNameLength_ = maxNameLength
         
     def generateName( self ):
-        name = '^'
+        name = INITIAL_CHAR
         probabilityOfName = 1.0
         while len(name) < self.maxNameLength_ + 1:
             ngramLengths = self.prefixCounter_.rangeTuple()
@@ -168,7 +171,7 @@ class Generator(object):
             characters_only, strengths_only = zip(* self.scorer_.scores() )
             i = discretepick( strengths_only )
             character = characters_only[i]
-            if character == '$':
+            if character == TERMINAL_CHAR:
                 if len(name) < self.minNameLength_:
                     continue
                 else:

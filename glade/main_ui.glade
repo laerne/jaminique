@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.19.0 -->
+<!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkTreeStore" id="dictionaries">
@@ -138,6 +138,7 @@
                     <property name="adjustment">number_of_generated_words_adjustement</property>
                     <property name="snap_to_ticks">True</property>
                     <property name="numeric">True</property>
+                    <signal name="value-changed" handler="on_number_to_generate_value_changed" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -289,7 +290,7 @@
                         <property name="use_stock">True</property>
                         <property name="image_position">top</property>
                         <property name="always_show_image">True</property>
-                        <signal name="clicked" handler="on_remove_dictionary" object="dictionaries_view-selection" swapped="no"/>
+                        <signal name="clicked" handler="on_remove_lexicon" object="dictionaries_view-selection" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -307,7 +308,7 @@
                         <property name="use_stock">True</property>
                         <property name="image_position">top</property>
                         <property name="always_show_image">True</property>
-                        <signal name="clicked" handler="on_add_dictionary" object="dictionaries_view-selection" swapped="no"/>
+                        <signal name="clicked" handler="on_add_lexicon" object="dictionaries_view-selection" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -325,7 +326,7 @@
                         <property name="use_stock">True</property>
                         <property name="image_position">top</property>
                         <property name="always_show_image">True</property>
-                        <signal name="clicked" handler="on_edit_dictionary" object="dictionaries_view-selection" swapped="no"/>
+                        <signal name="clicked" handler="on_edit_lexicon" object="dictionaries_view-selection" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
