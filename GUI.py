@@ -45,25 +45,25 @@ class GUIHandler(object):
         Gtk.main_quit()
         return True
         
-    def load_dictionary( self, filepath ):
-        dictionary_data = self.builder.get_object("dictionaries")
-        cachedDictionary = Loader.loadDictionary( filepath ) #TODO have cached dicts match Selector's Loader
+    def load_lexicon( self, filepath ):
+        lexicon_data = self.builder.get_object("dictionaries")
+        cachedLexicon = Loader.loadLexicon( filepath ) #TODO have cached dicts match Selector's Loader
         
         name = os.path.splitext( os.path.basename( filepath ) )[0]
-        wordcount = len( cachedDictionary )
-        weightcount = sum( cachedDictionary.values() )
+        wordcount = len( cachedLexicon )
+        weightcount = sum( cachedLexicon.values() )
         
-        dictionary_data.append( None, (filepath,wordcount,weightcount,name) )
-        self.dictionaries[ filepath ] = cachedDictionary
+        lexicon_data.append( None, (filepath,wordcount,weightcount,name) )
+        self.dictionaries[ filepath ] = cachedLexicon
 
-        arguments_files = self.arguments.get( 'dictionary', 'files' )
+        arguments_files = self.arguments.get( 'lexicon', 'files' )
         if filepath not in arguments_files:
             arguments_files .append( filepath )
             
         
-    def on_add_dictionary( self, selection ):
+    def on_add_lexicon( self, selection ):
         dialog = Gtk.FileChooserDialog(
-                "Open dictionary file",
+                "Open lexicon file",
                 self.builder.get_object("main_window"),
                 Gtk.FileChooserAction.OPEN,
                 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK),
@@ -73,7 +73,7 @@ class GUIHandler(object):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             for filename in dialog.get_filenames():
-                self.load_dictionary( filename )
+                self.load_lexicon( filename )
         elif response == Gtk.ResponseType.CANCEL:
             pass
         dialog.destroy()
@@ -97,36 +97,38 @@ class GUIHandler(object):
             self.arguments.set( name, 'generator', 'default' )
         return True
     
-    def on_remove_dictionary( self, selection ):
-        dictionary_data, row_paths =  selection.get_selected_rows()
-        row_iters = list(map( lambda path: dictionary_data.get_iter( path ), row_paths ))
+    def on_remove_lexicon( self, selection ):
+        lexicon_data, row_paths =  selection.get_selected_rows()
+        row_iters = list(map( lambda path: lexicon_data.get_iter( path ), row_paths ))
         for row_iter in row_iters:
-            dictionary_data.remove( row_iter )
+            lexicon_data.remove( row_iter )
         return True
         
-    def on_edit_dictionary( self, selection ):
-        dictionary_data, row_paths =  selection.get_selected_rows()
+    def on_edit_lexicon( self, selection ):
+        lexicon_data, row_paths =  selection.get_selected_rows()
         names_store = self.builder.get_object("generated_names")
         names_store.clear()
 
         for path in row_paths:
-            filepath = dictionary_data.get_value( dictionary_data.get_iter( path ), 0 )
+            filepath = lexicon_data.get_value( lexicon_data.get_iter( path ), 0 )
             for word, weight in self.dictionaries[ filepath ].items():
                 names_store.append((word,weight))
             
         #names_store.append(("",0.0))
+    
+    def on_number_to_generate_value_changed( self, spin_button ):
+        number_of_generations = spin_button.get_value_as_int()
+        self.arguments.set( number_of_generations, 'number' )
 
     def on_generate_button_clicked( self, selection ):
-        dictionary_data, selected_paths = selection.get_selected_rows()
+        lexicon_data, selected_paths = selection.get_selected_rows()
         selected_files = []
         for path in selected_paths:
-            iterator = dictionary_data.get_iter( path )
-            value = dictionary_data.get_value( iterator, 0 )
+            iterator = lexicon_data.get_iter( path )
+            value = lexicon_data.get_value( iterator, 0 )
             selected_files.append( value )
-        self.arguments.set( selected_files, 'dictionary', '*selected' )
+        self.arguments.set( selected_files, 'lexicon', '*selected_files' )
             
-        numberOfGenerations = self.builder.get_object("number_to_generate_spinner").get_value_as_int()
-        self.arguments.set( numberOfGenerations, 'number' )
         for perplexity, name in Selector.generate( self.arguments ):
             self.builder.get_object("generated_names").append((name,perplexity))
         
@@ -178,8 +180,8 @@ class GUIHandler(object):
                 names_store = self.builder.get_object("generated_names")
                 for row in names_store:
                     yield( row[0], row[1] )
-            Writer.writeDictionaryFromIterator( filename, store_iterator() )
-            self.load_dictionary( filename )
+            Writer.writeLexiconFromIterator( filename, store_iterator() )
+            self.load_lexicon( filename )
         elif response == Gtk.ResponseType.CANCEL:
             pass
         dialog.destroy()
@@ -202,18 +204,15 @@ def buildGUI( arguments = None ):
 def process( arguments ):
     handler, builder = buildGUI( arguments )
     
-    for filepath in sorted( arguments.get("dictionary","files",default=[]) ):
-        handler.load_dictionary( filepath )
+    for filepath in sorted( arguments.get("lexicon","files",default=[]) ):
+        handler.load_lexicon( filepath )
 
     selection = builder.get_object("dictionaries_view-selection")
     selection.select_all()
     
     numberToGenerate = arguments.get('number',default=0)
-    if numberToGenerate == 0:
-        builder.get_object("number_to_generate_spinner").set_value( 1 )
-        arguments.set(1,'number')
-    else:
-        builder.get_object("number_to_generate_spinner").set_value( numberToGenerate )
+    builder.get_object("number_to_generate_spinner").set_value( numberToGenerate )
+    if arguments.get('gui','*autogenerate_at_start'):
         handler.on_generate_button_clicked( selection )
     
     ##TODO set the counter box to the correct value based on the argument

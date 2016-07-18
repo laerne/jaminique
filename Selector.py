@@ -3,7 +3,9 @@ import MainFilters
 import Markov
 import SmoothMarkov
 import json
+import MainTokenizers
 from copy import deepcopy
+from utilities import warn, fail
 
 #TODO Deepcopy of some values
 def recursiveUpdate( dictionary1, dictionary2 ):
@@ -61,11 +63,15 @@ class Arguments(object):
             else:
                 return default
         return current
+    
+    def contains( self, *args ):
+        class TOKEN:
+            pass
+        return self.get( *args, default=TOKEN ) != TOKEN
         
     def subArguments( self, *args ):
         data = self.get( *args, default={} )
         return Arguments( data )
-        
     #Todo clean the tree when setting to 'None'
     def set( self, value, *args ):
         current = self.args
@@ -103,9 +109,9 @@ class Arguments(object):
             elif type( current ) == set or type( current ) == frozenset:
                 if n == 0:
                     if value:
-                        current.add( a )
+                        current |= {a}
                     elif a in current:
-                        current.remove( a )
+                        current -= {a}
                 else:
                     raise Exception("Having to reach down non key-value type %s" % str(type( current )) )
                 
@@ -114,7 +120,43 @@ class Arguments(object):
                 raise Exception("Having to reach down unknown type %s" % str(type( current )) )
 
     def unset( self, *args ):
-        self.set( None, *args )
+        current = self.args
+        args = list( args )
+        n = len( args )
+        
+        if n == 0:
+            self.args = {}
+            return
+            
+        while n > 0:
+            a = args.pop(0)
+            n = len( args )
+                
+            if type( current ) == list:
+                if type( a ) != int or a < 0 or a >= len( current ):
+                    raise Exception("Having to reach down a list with an invalid subscript.")
+
+                if n == 0:
+                    del current[ a ]
+                current = current[ a ]
+                
+            elif type( current ) == dict:
+                if n == 0:
+                    del current[ a ]
+                elif a not in current:
+                    raise Exception("Having to reach down a dict without key \"%s\"." % str(a) )
+                else:
+                    current = current[ a ]
+                
+            elif type( current ) == set or type( current ) == frozenset:
+                if n == 0:
+                    current -= {a}
+                else:
+                    raise Exception("Having to reach down non key-value type %s" % str(type( current )) )
+                
+            else:
+                print( '???', current )
+                raise Exception("Having to reach down unknown type %s" % str(type( current )) )
 
     def clone( self ):
         from copy import deepcopy
@@ -135,77 +177,113 @@ def loadDefaultArguments():
         arguments.update( configfile )
     return arguments
 
-def selectTokenizer( arguments, dictionary ):
-    return None
+def selectTokenizer( arguments, lexicon ):
+    tokenizerName = arguments.get( 'default', default="unicode" )
+    
+    if tokenizerName == "unicode" or tokenizerName == "utf8":
+        tokenizer =  MainTokenizers.UnicodeTokenizer()
+    else:
+        tokenizer = None
+        fail( 'No valid tokenizer with name "%s"' % (tokenizerName) )
+        
+    
+    if arguments.get('verbose'):
+        print( 'Choosing tokenizer "%s"' % (tokenizerName) )
+    
+    return tokenizer
 
-#TODO receive a tokenized dictionary
-def selectGenerator( arguments, dictionary ):
-    args = loadDefaultArguments()
-    args.update( arguments )
+#TODO receive a tokenized lexicon
+def selectGenerator( arguments, lexicon ):
+    generatorName = arguments.get( 'generator', 'default', default="markov" )
     
-    algoName = args.get( 'default', default="markov" )
-    
-    if algoName == "markov":
+    if generatorName == "markov":
         generator = Markov.Generator( 
-                dictionary,
-                nGramLength = args.get('markov','ngram-size'),
+                lexicon,
+                nGramLength = arguments.get('generator', 'markov','ngram-size'),
+                #minNameLength = arguments.get('filters', 'min-length'),
+                #maxNameLength = arguments.get('filters', 'max-length'),
                 )
 
-    elif algoName == "smooth-markov":
+    elif generatorName == "smooth-markov":
         generator = SmoothMarkov.Generator( 
-                dictionary,
+                lexicon,
                 minNGramLength = 0,
-                maxNGramLength = args.get('smooth-markov','ngram-size'),
+                maxNGramLength = arguments.get('generator','smooth-markov','ngram-size'),
+                #minNameLength = arguments.get('filters', 'min-length'),
+                #maxNameLength = arguments.get('filters', 'max-length'),
                 generateDelimiterSymbols = True,
                 )
     else:
         generator = None
+        fail( 'No valid generator with name "%s"' % (generatorName) )
+
+    if arguments.get('verbose'):
+        print( 'Choosing generator "%s"' % (generatorName) )
+        
     return generator
 
 # Return a list of filter to discard some generated results
-def selectFilters( arguments, dictionary ):
+def selectFilters( arguments, lexicon ):
 
     filters = []
 
     #OriginalOnlyFilter
-    if arguments.get( 'original' ) == True:
-        filters.append(   MainFilters.OriginalOnlyFilter( dictionary )   )
+    if arguments.get( 'filters', 'original' ) == True:
+        filters.append(   MainFilters.OriginalOnlyFilter( lexicon )   )
 
     #NameLengthFilter
-    minLength = arguments.get( 'min-length' )
-    maxLength = arguments.get( 'max-length' )
+    minLength = arguments.get( 'filters', 'min-length', default=0 )
+    maxLength = arguments.get( 'filters', 'max-length', default=float("inf") )
     if minLength > 0 or maxLength < float("inf"):
-        minLength = minLength or 0
-        maxLength = maxLength or float("inf")
         filters.append(   MainFilters.NameLengthFilter( minLength, maxLength )   )
 
     return MainFilters.AggregateFilter( filters )
     
 
-def selectDictionaryTokenizerGeneratorFilters( arguments ):
-    #Should be done by the tokenizer
-    files = arguments.get('dictionary','*selected') or arguments.get('dictionary','files')
-    dictionary = Loader.loadDictionary(
-            *files,
-            uniformWeights = arguments.get('dictionary','uniform'),
-            forceLowerCase = arguments.get('dictionary','ignore-case')
-            )
-    tokenizer = selectTokenizer( arguments.subArguments('tokenizer'), dictionary )
-    generator = selectGenerator( arguments.subArguments('generator'), dictionary )
-    filters = selectFilters( arguments.subArguments('filters'), dictionary )
-    return dictionary, tokenizer, generator, filters
+def selectLexiconTokenizerGeneratorFilters( arguments ):
+    lexicon = arguments.get('*cached-lexicon', default=None )
+    if lexicon == None:
+        files = arguments.get('lexicon','*selected_files') or arguments.get('lexicon','files') or []
+        lexicon = Loader.loadLexicon(
+                *files,
+                uniformWeights = arguments.get('lexicon','uniform'),
+                forceLowerCase = arguments.get('lexicon','ignore-case')
+                )
+
+    tokenizer = selectTokenizer( arguments, lexicon )
+    def to_token_sequence( keyval ):
+        return tokenizer.tokenize( keyval[0] ), keyval[1]
+    tokenized_lexicon = dict( map( to_token_sequence , lexicon.items() ) )
+
+    generator = selectGenerator( arguments, tokenized_lexicon )
+    filters = selectFilters( arguments, lexicon )
+    return lexicon, tokenizer, generator, filters
 
 def generate( arguments ):
-    dictionary, tokenizer, generator, filters = selectDictionaryTokenizerGeneratorFilters( arguments )
+    lexicon, tokenizer, generator, filters = selectLexiconTokenizerGeneratorFilters( arguments )
 
-    n = 0
-    while n < arguments.get('number',default=1):
-        namePerplexity, name = generator.generateName()
-        if not filters.validate( name ):
+    number_to_generate = arguments.get('number', default=1)
+    max_loops = arguments.get( 'infinity-threshold', default=65535 )
+    for i in range(number_to_generate):
+    
+        has_generated_a_valid_name = False
+        
+        for j in range( max_loops ):
+            perplexity, name = generator.generateName()
+            
+            valid = filters.validate( name )
+            
             if arguments.get('verbose'):
-                print("%.6f (!) %s" % (namePerplexity, name) )
-            continue
-        if arguments.get('verbose'):
-            print("%.6f (+) %s" % (namePerplexity, name) )
-        yield namePerplexity, name
-        n +=1
+                validitySymbol = "(+)" if valid else "(!)"
+                print("%.6f %s %s" % (perplexity, validitySymbol, name) )
+
+            if valid:
+                yield perplexity, name
+                has_generated_a_valid_name = True
+                break
+                
+        if not has_generated_a_valid_name:
+            warn( "Could not generate valid name in less than %d attempts" % max_loops )
+            break
+                
+            

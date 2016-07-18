@@ -19,7 +19,6 @@
 import argparse
 
 import Selector
-import GUI, Batch
     
 if __name__ != '__main__':
     raise Exception("This program is intented to be called interactively")
@@ -32,13 +31,13 @@ argparsedNameToPathMap = {
     'seed' : ['seed'],
     'verbose' : ['verbose'],
     'gui' : ['gui','enabled'],
-    'uniform' : ['dictionary','uniform'],
-    'ignore_case' : ['dictionary','ignore-case'],
+    'uniform' : ['lexicon','uniform'],
+    'ignore_case' : ['lexicon','ignore-case'],
     'min_length' : ['filters','min-length'],
     'max_length' : ['filters','max-length'],
     'original' : ['filters','original'],
     'generator' : ['generator','default'],
-    'files' : ['dictionary','files'],
+    'files' : ['lexicon','files'],
     #markov
     'markov_ngram_size' : ['generator','markov','ngram-size'],
     #smooth-markov
@@ -47,7 +46,7 @@ argparsedNameToPathMap = {
 
 #Convert a argparser name into a tree arborescence.
 def argparsedToArgument( argsNamespace ):
-    newArguments = Selector.Arguments({})
+    newArguments = Selector.Arguments()
     for key, value in vars( argsNamespace ).items():
         if value == None:
             continue
@@ -56,7 +55,7 @@ def argparsedToArgument( argsNamespace ):
 
 #Load config file into a tree arborescence
 argparser = argparse.ArgumentParser(
-        usage='%(prog)s [options] [DICTIONARY...]',
+        usage='%(prog)s [options] [LEXICON...]',
         description='Generate a random name from a flavor of existing names.'
         )
 
@@ -75,16 +74,16 @@ argparser.add_argument( '-u', '--uniform', action='store_true', default=None,
         help="ignore possible word weight and set them all to 1" )
 argparser.add_argument( '--weighted', action='store_false', dest='uniform' )
 argparser.add_argument( '-i', '--ignore-case', action='store_true', default=None,
-        help="ignore case of dictionary files (generate all lowercase words)" )
+        help="ignore case of lexicon files (generate all lowercase words)" )
 argparser.add_argument( '--acknowledge-case', action='store_false', dest='ignore_case' )
 argparser.add_argument( '-l', '--min-length', action='store', type=int,
         help="minimun length of a generated name" )
 argparser.add_argument( '-L', '--max-length', action='store', type=int,
         help="maximum length of a generated name" )
 argparser.add_argument( '-o', '--original', action='store_true', default=None,
-        help="discard words already existing in the dictionary" )
+        help="discard words already existing in the lexicon" )
 argparser.add_argument( '-a', '--any', action='store_false', dest='original',
-        help="allow to generate words already existing in the dictionary" )
+        help="allow to generate words already existing in the lexicon" )
 argparser.add_argument( '-g', '--generator', metavar = 'ALGO', action='store',
         choices=['smooth-markov','markov'],
         help="""algorithm used to generate the names.
@@ -95,21 +94,31 @@ argparser.add_argument( '--markov-ngram-size', metavar='SIZE', action='store', t
 #smooth markov options
 argparser.add_argument( '--smooth-markov-ngram-size', metavar='SIZE', action='store', type=int,
         help="In the 'smooth-markov' algorihm, set how many previous characters are looked to choose the next one" )
-#non-options arguments (dictionary files)
+#non-options arguments (lexicon files)
 argparser.add_argument( 'files', metavar='FILE', action='store', nargs='*', default=argparse.SUPPRESS,
         help='dictonary files to learn names from' )
 
+#Merge configuration files' arguments and cli-given arguments
 arguments = Selector.loadDefaultArguments()
-arguments.update( argparsedToArgument( argparser.parse_args() ) )
+cli_arguments = argparsedToArgument( argparser.parse_args() )
+arguments.update( cli_arguments )
 
+#Custom tweaking of the arguments based on some CLI values
+if cli_arguments.contains("number"):
+    arguments.set( True, 'gui', '*autogenerate_at_start' )
+
+#Set seed if required
 seedValue = arguments.get('seed',default='auto')
 if type(seedValue) == int:
     import random
     random.seed(int(seedValue))
 
+#Choose to use GUI or Batch
 if arguments.get('gui','enabled',default=False):
+    import GUI
     GUI.process( arguments )
 else:
+    import Batch
     Batch.process( arguments )
 
 

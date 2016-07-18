@@ -38,7 +38,7 @@ class OriginalOnlyFilter:
         self.namelist = namelist
     
     def validate( self, name ):
-        return ( name not in self.namelist )
+        return ( "".join(name) not in self.namelist )
 
 class NameLengthFilter:
     def __init__( self, min_length = 0, max_length = float("inf") ):
