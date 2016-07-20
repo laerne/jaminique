@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Jaminique.  If not, see <http://www.gnu.org/licenses/>.
 
-from utilities import discretepick
+from utilities import perplx, discretepick, warn, fail, InvalidGeneratedWord
 
 INITIAL_CHAR = '\x02'
 TERMINAL_CHAR = '\x03'
@@ -113,20 +113,39 @@ def buildPrefixCounters(
     return prefixCounters
 
 
-class Scorer(object):
-    def __init__( self ):
+def exponential_length_score_fct( l, n, k ):
+    return (k/n) * 2**l
+    
+def quadratic_length_score_fct( l, n, k ):
+    return (k/n) * l**2
+
+def linear_score_fct( l, n, k ):
+    return (k/n) * l
+
+def str_to_score_fct( fct_name ):
+    fct_name = fct_name.lower()
+    if fct_name == "linear":
+        return linear_score_fct
+    elif fct_name == "quadratic":
+        return quadratic_length_score_fct
+    elif fct_name == "exponential":
+        return exponential_length_score_fct
+
+class FunctionalScorer(object):
+    def __init__( self, score_fct = exponential_length_score_fct ):
         self.scores_ = {}
+        self.score_fct_ = score_fct
 
     ## c = the character itself
     ## l = effective length of prefix (may be higher than actual length to account for start_of_word prefixes)
     ## n = number of occurences of the prefix
     ## k = number of occurenecs of the character after the prefix
-    def learn( self, l, c, n, k ):
-        score = (k/n) * 2**l
-        if c in self.scores_:
-            self.scores_[c] += score
+    def learn( self, prefix_length, character, n_prefixes, n_prefix_characters ):
+        score = self.score_fct_( prefix_length, n_prefixes, n_prefix_characters )
+        if character in self.scores_:
+            self.scores_[character] += score
         else:
-            self.scores_[c] = score
+            self.scores_[character] = score
         
     def reset( self ):
         self.scores_ = {}
@@ -142,14 +161,14 @@ class Generator(object):
             minNGramLength = 0,
             maxNGramLength = 2,
             generateDelimiterSymbols = True,
-            minNameLength=0,
-            maxNameLength=256 ):
+            minNameLength = 0,
+            maxNameLength = 256 ):
 
         self.prefixCounter_ = PrefixCounter( dictionary,
                 minlength = minNGramLength,
                 maxlength = maxNGramLength,
                 generateDelimiterSymbols = generateDelimiterSymbols )
-        self.scorer_ = Scorer()
+        self.scorer_ = FunctionalScorer()
         self.minNameLength_ = minNameLength
         self.maxNameLength_ = maxNameLength
         
@@ -157,9 +176,11 @@ class Generator(object):
         name = INITIAL_CHAR
         probabilityOfName = 1.0
         while len(name) < self.maxNameLength_ + 1:
-            ngramLengths = self.prefixCounter_.rangeTuple()
-            minNgramLength = ngramLengths[0]
-            maxNGramLength = min( ngramLengths[1], len(name) )
+            minNgramLength, maxNGramLength = self.prefixCounter_.rangeTuple()
+            #Do not try to have prefixes longer that what was already generated
+            maxNGramLength = min( maxNGramLength, len(name) )
+
+            #Compute weights to choose next character
             for length in range(minNgramLength,maxNGramLength+1):
                 prefix = name[-length:] if length > 0 else ''
                 totalOccurences = self.prefixCounter_.countPrefixOccurences( length, prefix )
@@ -168,22 +189,38 @@ class Generator(object):
                 for char, charOccurences in perCharOccurences:
                     self.scorer_.learn( length, char, totalOccurences, charOccurences )
 
-            characters_only, strengths_only = zip(* self.scorer_.scores() )
-            i = discretepick( strengths_only )
-            character = characters_only[i]
+
+            transitionCharacters, transitionScores = map(   list,zip( *self.scorer_.scores() )   )
+            
+            #Discard the possibility to finish the name if not enough characters were generated.
+            if len(name) < self.minNameLength_:
+                if TERMINAL_CHAR in transitionCharacters:
+                    i = transitionCharacters.index( TERMINAL_CHAR )
+                    del transitionCharacters[i]
+                    del transitionScores[i]
+
+            #If there is no meaningful character to follow the prefix, raise an exception
+            #( Should never happen if `minNGramLength == 0`, since then the empty prefix is used and any character
+            #that appears in the lexicon can be picked with at least very unlikely prabilities.
+            if len(transitionCharacters) <= 0:
+                namePerplexity = perplx( probabilityOfName, len(name) )
+                raise InvalidGeneratedWord( ("No character to transition from \"%s\""%prefix), name, namePerplexity )
+
+            #Pick nexct character and build name
+            i = discretepick( transitionScores )
+            character = transitionCharacters[i]
+
             if character == TERMINAL_CHAR:
-                if len(name) < self.minNameLength_:
-                    continue
-                else:
-                    break
+                break
+
             name += character
-            probabilityOfName *= strengths_only[i] / sum(strengths_only)
+            probabilityOfName *= transitionScores[i] / sum(transitionScores)
             
             self.scorer_.reset()
         
         name=name[1:]
-        namePerplexity = (probabilityOfName**(-1/len(name))) if len(name)>0 else 0
-        
+        namePerplexity = perplx( probabilityOfName, len(name) )
+
         return ( namePerplexity, name )
         
 

@@ -27,7 +27,8 @@ def warn( *msgs, **kwargs ):
     
 def fail( *msgs, **kwargs ):
     printerror( "Error:", *msgs, **kwargs )
-    sys.exit(1)
+    #exception_msg = "Error: " + " ".join(map(str,msgs))
+    #raise Exception( exception_msg )
 
 #verbosityLevel = 1
 #def printVerbose( verbosity, *items ):
@@ -49,6 +50,8 @@ def dichotomicfind( random_access_collection, element ):
     return i
 
 
+def perplx( p, n ):
+    return (p**(-1/n)) if n>0 else 0
 
 class DiscretePicker:
     def __init__( self, probabilities ):
@@ -74,3 +77,11 @@ def discretepick( probabilities ):
     picker = DiscretePicker( probabilities )
     return picker.pick()
 
+
+class InvalidGeneratedWord(Exception):
+    def __init__( self, message, word, weight ):
+        self.message = message if message != None else "Partially generated word is invalid."
+        self.word = word
+        self.weight = weight
+    def __str__( self ):
+        return self.message

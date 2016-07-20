@@ -18,9 +18,13 @@
     { "default" : "markov"
     , "markov" :
         { "ngram-size" : 3
+        , "min-length" : 3
+        , "truncation-length" : 48
         }
     , "smooth-markov" :
         { "ngram-size" : 2
+        , "min-length" : 3
+        , "truncation-length" : 48
         }
     }
 , "filters" :

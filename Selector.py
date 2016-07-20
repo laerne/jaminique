@@ -5,7 +5,7 @@ import SmoothMarkov
 import json
 import MainTokenizers
 from copy import deepcopy
-from utilities import warn, fail
+from utilities import warn, fail, InvalidGeneratedWord
 
 #TODO Deepcopy of some values
 def recursiveUpdate( dictionary1, dictionary2 ):
@@ -184,7 +184,7 @@ def selectTokenizer( arguments, lexicon ):
         tokenizer =  MainTokenizers.UnicodeTokenizer()
     else:
         tokenizer = None
-        fail( 'No valid tokenizer with name "%s"' % (tokenizerName) )
+        fail( 'No valid tokenizer with name "%s"' % (tokenizerName), verbose = arguments.get('verbose') )
         
     
     if arguments.get('verbose'):
@@ -199,23 +199,24 @@ def selectGenerator( arguments, lexicon ):
     if generatorName == "markov":
         generator = Markov.Generator( 
                 lexicon,
-                nGramLength = arguments.get('generator', 'markov','ngram-size'),
-                #minNameLength = arguments.get('filters', 'min-length'),
-                #maxNameLength = arguments.get('filters', 'max-length'),
+                nGramLength = arguments.get('generator', 'markov','ngram-size', default=2 ),
+                minNameLength = arguments.get('generator', 'markov', 'min-length', default=0 ),
+                maxNameLength = arguments.get('generator', 'markov', 'truncation-length', default=256 ),
+                #verbose = arguments.get('verbose'),
                 )
 
     elif generatorName == "smooth-markov":
         generator = SmoothMarkov.Generator( 
                 lexicon,
                 minNGramLength = 0,
-                maxNGramLength = arguments.get('generator','smooth-markov','ngram-size'),
-                #minNameLength = arguments.get('filters', 'min-length'),
-                #maxNameLength = arguments.get('filters', 'max-length'),
+                maxNGramLength = arguments.get( 'generator', 'smooth-markov', 'ngram-size', default=2 ),
+                minNameLength = arguments.get( 'generator', 'smooth-markov', 'min-length', default=0 ),
+                maxNameLength = arguments.get( 'generator', 'smooth-markov', 'truncation-length', default=256 ),
                 generateDelimiterSymbols = True,
                 )
     else:
         generator = None
-        fail( 'No valid generator with name "%s"' % (generatorName) )
+        fail( 'No valid generator with name "%s"' % (generatorName), verbose = arguments.get('verbose') )
 
     if arguments.get('verbose'):
         print( 'Choosing generator "%s"' % (generatorName) )
@@ -273,21 +274,27 @@ def generate( arguments ):
         has_generated_a_valid_name = False
         
         for j in range( max_loops ):
-            perplexity, name = generator.generateName()
+            weight, name = 0.0, ""
+            try:
+                weight, name = generator.generateName()
+            except InvalidGeneratedWord as e:
+                if arguments.get( 'verbose', default=False ):
+                    print("%.4f <!> %s <!> %s" % (e.weight, e.word, str(e) ) )
+                continue
             
             valid = filters.validate( name )
             
             if arguments.get('verbose'):
-                validitySymbol = "(+)" if valid else "(!)"
-                print("%.6f %s %s" % (perplexity, validitySymbol, name) )
+                validitySymbol = "(+)" if valid else "(-)"
+                print("%.4f %s %s" % (weight, validitySymbol, name) )
 
             if valid:
-                yield perplexity, name
+                yield weight, name
                 has_generated_a_valid_name = True
                 break
                 
         if not has_generated_a_valid_name:
-            warn( "Could not generate valid name in less than %d attempts" % max_loops )
+            fail( "Could not generate valid name in less than %d attempts" % max_loops )
             break
                 
             
