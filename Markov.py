@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Jaminique.  If not, see <http://www.gnu.org/licenses/>.
 
-from utilities import discretepick, warn, fail
+from utilities import perplx, discretepick, warn, fail, InvalidGeneratedWord
 
 INITIAL_CHAR = '\x02'
 TERMINAL_CHAR = '\x03'
@@ -108,9 +108,9 @@ class Generator(object):
     def __init__(
             self,
             dictionary,
-            nGramLength = 2,
-            minNameLength=0,
-            maxNameLength=256 ):
+            nGramLength,
+            minNameLength,
+            maxNameLength):
 
         self.nGramLength_ = nGramLength
         self.transitionTable_ = TransitionTable( dictionary, length = nGramLength+1 )
@@ -121,30 +121,37 @@ class Generator(object):
         name = INITIAL_CHAR
         probabilityOfName = 1.0
         while len(name) < self.maxNameLength_ + 1:
+        
+            #Compute weights to choose next character
             prefix = name[-self.nGramLength_:] if self.nGramLength_ > 0 else ''
-            #prefixScore = self.transitionTable_.prefixScore( prefix )
             
-            transitions = list( self.transitionTable_.transitionsForPrefix( prefix ) )
-            if not transitions:
-                fail( "Could not find transition for prefix %s" % repr(prefix) )
-                #self.transitionTable_.printCountTable()
-                break
-            transitionCharacters, transitionScores = zip( *transitions )
+            transitionsIterator = self.transitionTable_.transitionsForPrefix( prefix )
+            transitionCharacters, transitionScores = map( list, zip( *transitionsIterator ) )
+            
+            #Discard the possibility to finish the name if not enough characters were generated.
+            if len(name) < self.minNameLength_:
+                if TERMINAL_CHAR in transitionCharacters:
+                    i = transitionCharacters.index( TERMINAL_CHAR )
+                    del transitionCharacters[i]
+                    del transitionScores[i]
+            
+            #If there is no meaningful character to follow the prefix, raise an exception
+            if len(transitionCharacters) <= 0:
+                namePerplexity = perplx( probabilityOfName, len(name) )
+                raise InvalidGeneratedWord( ("No character to transition from \"%s\""%prefix), name, namePerplexity )
             
             i = discretepick( transitionScores )
             character = transitionCharacters[i]
             
+            #Pick nexct character and build name
             if character == TERMINAL_CHAR:
-                if len(name) < self.minNameLength_:
-                    continue
-                else:
-                    break
+                break
 
             name += character
             probabilityOfName *= transitionScores[i] / sum(transitionScores)
             
         
         name=name[1:]
-        namePerplexity = (probabilityOfName**(-1/len(name))) if len(name)>0 else 0
+        namePerplexity = perplx( probabilityOfName, len(name) )
         
         return (namePerplexity, name)
