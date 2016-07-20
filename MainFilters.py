@@ -48,3 +48,11 @@ class NameLengthFilter:
     def validate( self, name ):
         return self.min_length <= len(name) <= self.max_length
 
+class RegexFilter:
+    def __init__( self, pattern ):
+        assert type(pattern) == str
+        import re
+        self.regex = re.compile( pattern )
+    
+    def validate( self, name ):
+        return self.regex.search( name ) != None
