@@ -36,6 +36,7 @@ argparsedNameToPathMap = {
     'min_length' : ['filters','min-length'],
     'max_length' : ['filters','max-length'],
     'original' : ['filters','original'],
+    'regex' : ['filters','regex'],
     'generator' : ['generator','default'],
     'files' : ['lexicon','files'],
     #markov
@@ -82,6 +83,8 @@ argparser.add_argument( '-L', '--max-length', action='store', type=int,
         help="maximum length of a generated name" )
 argparser.add_argument( '-o', '--original', action='store_true', default=None,
         help="discard words already existing in the lexicon" )
+argparser.add_argument( '-r', '--regex', '--match-regex', metavar = 'PATTERN', action='store', default=None,
+        help="discard words that do not match the given (PRCE) regular expression" )
 argparser.add_argument( '-a', '--any', action='store_false', dest='original',
         help="allow to generate words already existing in the lexicon" )
 argparser.add_argument( '-g', '--generator', metavar = 'ALGO', action='store',

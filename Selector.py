@@ -236,6 +236,10 @@ def selectFilters( arguments, lexicon ):
     maxLength = arguments.get( 'filters', 'max-length', default=float("inf") )
     if minLength > 0 or maxLength < float("inf"):
         filters.append(   MainFilters.NameLengthFilter( minLength, maxLength )   )
+        
+    if arguments.contains( 'filters', 'regex' ):
+        pattern = arguments.get( 'filters', 'regex' )
+        filters.append( MainFilters.RegexFilter( pattern ) )
 
     return MainFilters.AggregateFilter( filters )
     

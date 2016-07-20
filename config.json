@@ -1,6 +1,6 @@
 { "verbose" : false
 , "number" : 1
-, "infinity-threshold" : 5000
+, "infinity-threshold" : 10000
 , "seed" : "auto"
 , "gui" :
     { "enabled" : true
