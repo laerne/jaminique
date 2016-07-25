@@ -125,8 +125,15 @@ class Generator(object):
             #Compute weights to choose next character
             prefix = name[-self.nGramLength_:] if self.nGramLength_ > 0 else ''
             
-            transitionsIterator = self.transitionTable_.transitionsForPrefix( prefix )
-            transitionCharacters, transitionScores = map( list, zip( *transitionsIterator ) )
+            transitions = list( self.transitionTable_.transitionsForPrefix( prefix ) )
+            
+            #If there is no meaningful character to follow the prefix, raise an exception
+            if len(transitions) <= 0:
+                namePerplexity = perplx( probabilityOfName, len(name) )
+                raise InvalidGeneratedWord( ("No character to transition from \"%s\""%prefix), name, namePerplexity )
+            
+            
+            transitionCharacters, transitionScores = map( list, zip( *transitions ) )
             
             #Discard the possibility to finish the name if not enough characters were generated.
             if len(name) < self.minNameLength_:
@@ -135,10 +142,9 @@ class Generator(object):
                     del transitionCharacters[i]
                     del transitionScores[i]
             
-            #If there is no meaningful character to follow the prefix, raise an exception
-            if len(transitionCharacters) <= 0:
-                namePerplexity = perplx( probabilityOfName, len(name) )
-                raise InvalidGeneratedWord( ("No character to transition from \"%s\""%prefix), name, namePerplexity )
+                    if len(transitionCharacters) <= 0:
+                        namePerplexity = perplx( probabilityOfName, len(name) )
+                        raise InvalidGeneratedWord( ("Only end-of-word transition from \"%s\""%prefix), name, namePerplexity )
             
             i = discretepick( transitionScores )
             character = transitionCharacters[i]

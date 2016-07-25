@@ -215,9 +215,4 @@ def process( arguments ):
     if arguments.get('gui','*autogenerate_at_start'):
         handler.on_generate_button_clicked( selection )
     
-    ##TODO set the counter box to the correct value based on the argument
-    ##TODO Bind the value of those boxes with the values in the "arguments" store
-    
-    
-        
     Gtk.main()

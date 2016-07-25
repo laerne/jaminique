@@ -178,10 +178,13 @@ def loadDefaultArguments():
     return arguments
 
 def selectTokenizer( arguments, lexicon ):
-    tokenizerName = arguments.get( 'default', default="unicode" )
+    tokenizerName = arguments.get( 'tokenizer', 'default', default="unicode" )
     
     if tokenizerName == "unicode" or tokenizerName == "utf8":
         tokenizer =  MainTokenizers.UnicodeTokenizer()
+    if tokenizerName == "ll1":
+        tokens = arguments.get('tokenizer','ll1','token-list',default="").split(",")
+        tokenizer =  MainTokenizers.LL1Tokenizer( tokens )
     else:
         tokenizer = None
         fail( 'No valid tokenizer with name "%s"' % (tokenizerName), verbose = arguments.get('verbose') )
