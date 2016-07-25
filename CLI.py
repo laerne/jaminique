@@ -37,6 +37,7 @@ argparsedNameToPathMap = {
     'max_length' : ['filters','max-length'],
     'original' : ['filters','original'],
     'regex' : ['filters','regex'],
+    'tokenizer' : ['tokenizer','default'],
     'generator' : ['generator','default'],
     'files' : ['lexicon','files'],
     #markov
@@ -87,6 +88,10 @@ argparser.add_argument( '-r', '--regex', '--match-regex', metavar = 'PATTERN', a
         help="discard words that do not match the given (PRCE) regular expression" )
 argparser.add_argument( '-a', '--any', action='store_false', dest='original',
         help="allow to generate words already existing in the lexicon" )
+argparser.add_argument( '-t', '--tokenizer', metavar = 'ALGO', action='store',
+        choices=['unicode','utf8','ll1'],
+        help="""algorithm used to split characters from the names.
+        Possible choices include 'unicode', 'utf8' and 'll1'.""" )
 argparser.add_argument( '-g', '--generator', metavar = 'ALGO', action='store',
         choices=['smooth-markov','markov'],
         help="""algorithm used to generate the names.
