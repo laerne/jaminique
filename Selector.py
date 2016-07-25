@@ -1,228 +1,132 @@
+# This file is part of Jaminique.
+# Copyright (C) 2016 by Nicolas BRACK <nicolas.brack@mail.be>
+# 
+# Jaminique is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Jaminique is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Jaminique.  If not, see <http://www.gnu.org/licenses/>.
+
+from ArgumentTree import ArgumentTree
 import Loader
 import MainFilters
 import Markov
 import SmoothMarkov
 import json
 import MainTokenizers
-from copy import deepcopy
+
 from utilities import warn, fail, InvalidGeneratedWord
 
-#TODO Deepcopy of some values
-def recursiveUpdate( dictionary1, dictionary2 ):
-    #print( '>>>', dictionary1 )
-    #print( '+++', dictionary2 )
-    for key in dictionary2.keys():
-        if key not in dictionary1:
-            dictionary1[ key ] = dictionary2[ key ]
-        else:
-            value1 = dictionary1[ key ]
-            value2 = dictionary2[ key ]
-            if type( value1 ) == type( value2 ) == dict:
-                recursiveUpdate( value1, value2 )
-            elif type( value1 ) == set and type( value2 ) in {set,frozenset}:
-                dictionary1[ key ].update( value2 )
-            elif type( value1 ) == frozenset and type( value2 ) in {set,frozenset}:
-                dictionary1[ key ] = value1 | frozenset( value2 )
-            elif type( value1 ) == type( value2 ) == list:
-                dictionary1[ key ] = value2
-            else:
-                dictionary1[ key ] = value2
-    #print( '<<<', dictionary1 )
-
-class Arguments(object):
-    def __init__( self, defaultArguments = {} ):
-        self.args = deepcopy( defaultArguments )
-    
-    def update( self, other ):
-        if type( other ) == dict:
-            recursiveUpdate( self.args, other )
-        elif type( other ) == Arguments:
-            recursiveUpdate( self.args, other.args )
-        elif type( other ) == str:
-            data = json.loads( other )
-            recursiveUpdate( self.args, data )
-        elif hasattr( other, 'read' ):
-            data = json.load( other )
-            recursiveUpdate( self.args, data )
-        else:
-            raise Exception("Do not know how to update attributs with type %s" % (type(other)) )
-
-    def get( self, *args, default=None ):
-        current = self.args
-        for a in args:
-            if type( current ) == list:
-                if type( a ) != int or a < 0 or a >= len( current ):
-                    return default
-                current = current[ a ]
-            elif type( current ) == dict:
-                if a not in current:
-                    return default
-                current = current[ a ]
-            elif type( current ) == set or type( current ) == frozenset:
-                current = ( a in current ) #Necesseraly True or False
-            else:
-                return default
-        return current
-    
-    def contains( self, *args ):
-        class TOKEN:
-            pass
-        return self.get( *args, default=TOKEN ) != TOKEN
-        
-    def subArguments( self, *args ):
-        data = self.get( *args, default={} )
-        return Arguments( data )
-    #Todo clean the tree when setting to 'None'
-    def set( self, value, *args ):
-        current = self.args
-        args = list( args )
-        n = len( args )
-        
-        if n == 0:
-            self.args = value
-            return
-            
-        while n > 0:
-            a = args.pop(0)
-            n = len( args )
-            #c = current if type(current) != dict else set( current.keys() )
-            #print( '!!!', "n:%d"%n, "a:%s"%repr(a), "c:%s"%repr(c), "v:%s"%repr(value) )
-                
-            if type( current ) == list:
-                if type( a ) != int or a < 0 or a >= len( current ):
-                    raise Exception("Having to reach down a list with an invalid subscript.")
-
-                if n == 0:
-                    if value != None:
-                        current[ a ] = value
-                current = current[ a ]
-                
-            elif type( current ) == dict:
-                if n == 0:
-                    current[ a ] = value
-                elif a not in current:
-                    current[ a ] = {}
-                    current = current[ a ]
-                else:
-                    current = current[ a ]
-                
-            elif type( current ) == set or type( current ) == frozenset:
-                if n == 0:
-                    if value:
-                        current |= {a}
-                    elif a in current:
-                        current -= {a}
-                else:
-                    raise Exception("Having to reach down non key-value type %s" % str(type( current )) )
-                
-            else:
-                print( '???', current )
-                raise Exception("Having to reach down unknown type %s" % str(type( current )) )
-
-    def unset( self, *args ):
-        current = self.args
-        args = list( args )
-        n = len( args )
-        
-        if n == 0:
-            self.args = {}
-            return
-            
-        while n > 0:
-            a = args.pop(0)
-            n = len( args )
-                
-            if type( current ) == list:
-                if type( a ) != int or a < 0 or a >= len( current ):
-                    raise Exception("Having to reach down a list with an invalid subscript.")
-
-                if n == 0:
-                    del current[ a ]
-                current = current[ a ]
-                
-            elif type( current ) == dict:
-                if n == 0:
-                    del current[ a ]
-                elif a not in current:
-                    raise Exception("Having to reach down a dict without key \"%s\"." % str(a) )
-                else:
-                    current = current[ a ]
-                
-            elif type( current ) == set or type( current ) == frozenset:
-                if n == 0:
-                    current -= {a}
-                else:
-                    raise Exception("Having to reach down non key-value type %s" % str(type( current )) )
-                
-            else:
-                print( '???', current )
-                raise Exception("Having to reach down unknown type %s" % str(type( current )) )
-
-    def clone( self ):
-        from copy import deepcopy
-        return Arguments( deepcopy( self.args ) )
-                
-    def __str__( self ):
-        return 'Arguments(' + str( self.args ) + ')'
-
-    def __repr__( self ):
-        return 'Arguments(' + repr(self.args) + ')'
-            
-        
         
 #TODO read a json configuration file
-def loadDefaultArguments():
-    arguments = Arguments()
+def loadDefaultArgumentTree():
+    arguments = ArgumentTree()
     with open( 'config.json', 'rt' ) as configfile:
         arguments.update( configfile )
     return arguments
 
-def selectTokenizer( arguments, lexicon ):
-    tokenizerName = arguments.get( 'tokenizer', 'default', default="unicode" )
+def argumentTreeUpdatedOnBase( initialArgumentsName, argumentsMap, recursive = True ):
+    if initialArgumentsName not in argumentsMap:
+        return ArgumentTree()
+
+    currentArguments = argumentsMap[ initialArgumentsName ].clone()
     
-    if tokenizerName == "unicode" or tokenizerName == "utf8":
+    if not currentArguments.contains('base'):
+        currentArguments.set( initialArgumentsName, '*base-name' )
+        return currentArguments
+    else:
+        newArguments = None
+        
+        if recursive:
+            newArguments = argumentTreeUpdatedOnBase( currentArguments.get('base'), argumentsMap )
+        else:
+            newArguments = argumentsMap[ currentArguments.get('base') ].clone()
+
+        currentArguments.unset('base')
+        newArguments.update( currentArguments )
+        return newArguments
+
+def selectSubTreeWithBase( arguments, *path ):
+    pathToDefault = path + ('default',)
+    targetName = arguments.get( *pathToDefault )
+    
+    def toSubTree( kv ):
+        k, v = kv
+        return ( k, ArgumentTree( v ) )
+    cotargets = arguments.get( *path )
+    argumentsMap = dict( map( toSubTree, cotargets.items() ) )
+    
+    
+    targetArguments = argumentTreeUpdatedOnBase( targetName, argumentsMap )
+    return targetName, targetArguments
+    
+        
+
+def selectTokenizer( arguments, lexicon ):
+    tokenizerName, tokenizerArguments = selectSubTreeWithBase( arguments, 'tokenizer' )
+    tokenizerAlgorithm = tokenizerArguments.get( 'algorithm' ) or tokenizerArguments.get( '*base-name' )
+    
+
+    #Solve aliases
+    if tokenizerAlgorithm == "unicode":
+        tokenizerAlgorithm = "utf8"
+
+
+    #Select algorithm
+    if tokenizerAlgorithm == "utf8":
         tokenizer =  MainTokenizers.UnicodeTokenizer()
-    if tokenizerName == "ll1":
-        tokens = arguments.get('tokenizer','ll1','token-list',default="").split(",")
+    elif tokenizerAlgorithm == "ll1":
+        tokens = tokenizerArguments.get( 'token-list', default="" ).split(",")
         tokenizer =  MainTokenizers.LL1Tokenizer( tokens )
     else:
         tokenizer = None
-        fail( 'No valid tokenizer with name "%s"' % (tokenizerName), verbose = arguments.get('verbose') )
+        fail( 'No valid tokenizer with name %s' % repr(tokenizerAlgorithm) )
         
     
+    #Notification for verbose mode
     if arguments.get('verbose'):
-        print( 'Choosing tokenizer "%s"' % (tokenizerName) )
+        print( 'Choosing tokenizer %s' % repr(tokenizerAlgorithm) )
     
     return tokenizer
 
 #TODO receive a tokenized lexicon
 def selectGenerator( arguments, lexicon ):
-    generatorName = arguments.get( 'generator', 'default', default="markov" )
+    generatorName, generatorArguments = selectSubTreeWithBase( arguments, 'generator' )
+    generatorAlgorithm = generatorArguments.get( 'algorithm' ) or generatorArguments.get( '*base-name' )
     
-    if generatorName == "markov":
+    #Select algorithm
+    if generatorAlgorithm == "markov":
         generator = Markov.Generator( 
                 lexicon,
-                nGramLength = arguments.get('generator', 'markov','ngram-size', default=2 ),
-                minNameLength = arguments.get('generator', 'markov', 'min-length', default=0 ),
-                maxNameLength = arguments.get('generator', 'markov', 'truncation-length', default=256 ),
+                nGramLength = generatorArguments.get( 'ngram-size', default=2 ),
+                minNameLength = generatorArguments.get( 'min-length', default=0 ),
+                maxNameLength = generatorArguments.get( 'truncation-length', default=256 ),
                 #verbose = arguments.get('verbose'),
                 )
 
-    elif generatorName == "smooth-markov":
+    elif generatorAlgorithm == "smooth-markov":
         generator = SmoothMarkov.Generator( 
                 lexicon,
                 minNGramLength = 0,
-                maxNGramLength = arguments.get( 'generator', 'smooth-markov', 'ngram-size', default=2 ),
-                minNameLength = arguments.get( 'generator', 'smooth-markov', 'min-length', default=0 ),
-                maxNameLength = arguments.get( 'generator', 'smooth-markov', 'truncation-length', default=256 ),
+                maxNGramLength = generatorArguments.get( 'ngram-size', default=2 ),
+                minNameLength = generatorArguments.get( 'min-length', default=0 ),
+                maxNameLength = generatorArguments.get( 'truncation-length', default=256 ),
                 generateDelimiterSymbols = True,
                 )
     else:
         generator = None
-        fail( 'No valid generator with name "%s"' % (generatorName), verbose = arguments.get('verbose') )
+        fail( 'No valid generator with name %s' % repr(generatorAlgorithm) )
 
+    #Notification for verbose mode
     if arguments.get('verbose'):
-        print( 'Choosing generator "%s"' % (generatorName) )
+        print( 'Choosing generator %s' % repr(generatorAlgorithm) )
         
     return generator
 

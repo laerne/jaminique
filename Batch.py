@@ -1,5 +1,3 @@
-#/usr/bin/env python3
-
 # This file is part of Jaminique.
 # Copyright (C) 2016 by Nicolas BRACK <nicolas.brack@mail.be>
 # 
@@ -22,7 +20,8 @@ import Selector
 
 def process( arguments ):
     for perplexity, name in Selector.generate( arguments ):
-        #if verbose, Selector.generate already printed the word
+        # if verbose is enabled, Selector.generate already printed the word,
+        # so print it only in verbose is disabled
         if not arguments.get('verbose'):
             print("%s" % name )
 

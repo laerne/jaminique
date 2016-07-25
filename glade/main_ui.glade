@@ -29,16 +29,6 @@
       <!-- column-name font -->
       <column type="gchararray"/>
     </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes" context="This is from this context : https://en.wikipedia.org/wiki/Markov_chain">markov</col>
-        <col id="1">Bold</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">smooth-markov</col>
-        <col id="1">Bold</col>
-      </row>
-    </data>
   </object>
   <object class="GtkAdjustment" id="number_of_generated_words_adjustement">
     <property name="lower">1</property>

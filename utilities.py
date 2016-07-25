@@ -27,8 +27,8 @@ def warn( *msgs, **kwargs ):
     
 def fail( *msgs, **kwargs ):
     printerror( "Error:", *msgs, **kwargs )
-    #exception_msg = "Error: " + " ".join(map(str,msgs))
-    #raise Exception( exception_msg )
+    exception_msg = "Error: " + " ".join(map(str,msgs))
+    raise Exception( exception_msg )
 
 #verbosityLevel = 1
 #def printVerbose( verbosity, *items ):

@@ -121,7 +121,6 @@ class Generator(object):
         name = INITIAL_CHAR
         probabilityOfName = 1.0
         while len(name) < self.maxNameLength_ + 1:
-        
             #Compute weights to choose next character
             prefix = name[-self.nGramLength_:] if self.nGramLength_ > 0 else ''
             

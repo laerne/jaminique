@@ -1,5 +1,3 @@
-#/usr/bin/env python3
-
 # This file is part of Jaminique.
 # Copyright (C) 2016 by Nicolas BRACK <nicolas.brack@mail.be>
 # 
@@ -16,6 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Jaminique.  If not, see <http://www.gnu.org/licenses/>.
 
+
+from ArgumentTree import ArgumentTree
+import SmoothMarkov
+import Loader
+import Writer
+import Selector
+from utilities import warn, fail
+
 from gi import require_version
 require_version('Gtk','3.0')
 from gi.repository import Gtk
@@ -23,16 +29,10 @@ from gi.repository import Gdk
 import os.path
 from sys import argv
 
-import SmoothMarkov
-import Loader
-import Writer
-import Selector
-from utilities import warn, fail
-
 glade_prefix = os.path.join( os.path.dirname( argv[0] ), "glade" )
 
 
-#The GUI data rule: Data in arguments (of type Selector.Arguments) cannot be changed
+#The GUI data rule: Data in arguments (of type ArgumentTree) cannot be changed
 #   EXCEPT WHEN the data is a duplicate/inializer of a GUI value, that is updated when the GUI is.
 
 class GUIHandler(object):
@@ -59,6 +59,36 @@ class GUIHandler(object):
         arguments_files = self.arguments.get( 'lexicon', 'files' )
         if filepath not in arguments_files:
             arguments_files .append( filepath )
+
+    #TODO create a class that do this behavior both for tokenizer and generator
+    def add_generation_method( self, name ):
+        generation_algorithms_data = self.builder.get_object("generation_algorithms")
+        iterator = generation_algorithms_data.append( (name,"") )
+        #self.builder.get_object("generation_algo_selector").set_active_iter( iterator )
+    
+    def select_generation_method_by_name( self, name = None ):
+        if name == None:
+            name = self.arguments.get( 'generator', 'default' )
+            
+        generation_algorithms_data = self.builder.get_object("generation_algorithms")
+        i = generation_algorithms_data.get_iter_first()
+        while i != None:
+            if generation_algorithms_data.get_value( i, 0 ) == name:
+                self.builder.get_object("generation_algo_selector").set_active_iter( i )
+                return
+            i = generation_algorithms_data.iter_next( i )
+
+        #if this code is reached, there is no algo of the correct name in the store
+        dialog = Gtk.MessageDialog(
+                self.builder.get_object("main_window"),
+                0,
+                Gtk.MessageType.WARNING,
+                Gtk.ButtonsType.OK,
+                "No generation algorithm with name %s to select." % repr(name) );
+        dialog.run()
+        dialog.destroy()
+        
+        
             
         
     def on_add_lexicon( self, selection ):
@@ -87,7 +117,7 @@ class GUIHandler(object):
                     self.builder.get_object("main_window"),
                     0,
                     Gtk.MessageType.WARNING,
-                    Gtk.ButtonTypes.OK,
+                    Gtk.ButtonsType.OK,
                     "No generation algorithm selected.");
             dialog.run()
             dialog.destroy()
@@ -190,7 +220,7 @@ class GUIHandler(object):
     
 def buildGUI( arguments = None ):
     if arguments == None:
-        arguments = Selector.Arguments()
+        arguments = ArgumentTree()
         
     glade_path = os.path.join( glade_prefix, "main_ui.glade" )
     builder = Gtk.Builder.new_from_file( glade_path )
@@ -204,8 +234,16 @@ def buildGUI( arguments = None ):
 def process( arguments ):
     handler, builder = buildGUI( arguments )
     
+    #Add default dictionaries
     for filepath in sorted( arguments.get("lexicon","files",default=[]) ):
         handler.load_lexicon( filepath )
+    #Add default generation methods
+    generation_methods = sorted( [ name for name in arguments.get( "generator", default={} ).keys()
+            if name[0] != '*' and name != "default" ] )
+        
+    for generation_method in generation_methods:
+        handler.add_generation_method( generation_method )
+    handler.select_generation_method_by_name()
 
     selection = builder.get_object("dictionaries_view-selection")
     selection.select_all()

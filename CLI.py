@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Jaminique.  If not, see <http://www.gnu.org/licenses/>.
 
-import argparse
-
+from ArgumentTree import ArgumentTree
 import Selector
+
+import argparse
     
 if __name__ != '__main__':
     raise Exception("This program is intented to be called interactively")
@@ -48,7 +49,7 @@ argparsedNameToPathMap = {
 
 #Convert a argparser name into a tree arborescence.
 def argparsedToArgument( argsNamespace ):
-    newArguments = Selector.Arguments()
+    newArguments = ArgumentTree()
     for key, value in vars( argsNamespace ).items():
         if value == None:
             continue
@@ -89,13 +90,9 @@ argparser.add_argument( '-r', '--regex', '--match-regex', metavar = 'PATTERN', a
 argparser.add_argument( '-a', '--any', action='store_false', dest='original',
         help="allow to generate words already existing in the lexicon" )
 argparser.add_argument( '-t', '--tokenizer', metavar = 'ALGO', action='store',
-        choices=['unicode','utf8','ll1'],
-        help="""algorithm used to split characters from the names.
-        Possible choices include 'unicode', 'utf8' and 'll1'.""" )
+        help="""algorithm or preset used to split characters/phonems from the names.""")
 argparser.add_argument( '-g', '--generator', metavar = 'ALGO', action='store',
-        choices=['smooth-markov','markov'],
-        help="""algorithm used to generate the names.
-        Possible choices include 'markov', 'smooth-markov'.""" )
+        help="""algorithm or preset used to generate the names.""" )
 #markov options
 argparser.add_argument( '--markov-ngram-size', metavar='SIZE', action='store', type=int,
         help="In the 'markov' algorihm, set how many previous characters are looked to choose the next one" )
@@ -107,7 +104,7 @@ argparser.add_argument( 'files', metavar='FILE', action='store', nargs='*', defa
         help='dictonary files to learn names from' )
 
 #Merge configuration files' arguments and cli-given arguments
-arguments = Selector.loadDefaultArguments()
+arguments = Selector.loadDefaultArgumentTree()
 cli_arguments = argparsedToArgument( argparser.parse_args() )
 arguments.update( cli_arguments )
 
