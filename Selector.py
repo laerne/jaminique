@@ -24,54 +24,90 @@ import MainTokenizers
 
 from utilities import warn, fail, InvalidGeneratedWord
 
-        
-#TODO read a json configuration file
-def loadDefaultArgumentTree():
-    arguments = ArgumentTree()
-    with open( 'config.json', 'rt' ) as configfile:
-        arguments.update( configfile )
-    return arguments
+import appdirs
+import os.path
 
-def argumentTreeUpdatedOnBase( initialArgumentsName, argumentsMap, recursive = True ):
-    if initialArgumentsName not in argumentsMap:
+def loadCoreConfiguration():
+    from sys import argv
+    config_path = os.path.join( os.path.dirname( argv[0] ), "config.json" )
+    
+    if os.path.isfile( config_path ):
+        with open( config_path, 'rt' ) as configfile:
+            return ArgumentTree( configfile )
+    else:
+       return ArgumentTree()
+
+def loadSystemConfiguration():
+    config_path = os.path.join( appdirs.site_config_dir( 'jaminique' ), "config.json" )
+    
+    if os.path.isfile( config_path ):
+        with open( config_path, 'rt' ) as configfile:
+            return ArgumentTree( configfile )
+    else:
+       return ArgumentTree()
+
+def loadUserConfiguration():
+    config_path = os.path.join( appdirs.user_config_dir( 'jaminique' ), "config.json" )
+    
+    if os.path.isfile( config_path ):
+        with open( config_path, 'rt' ) as configfile:
+            return ArgumentTree( configfile )
+    else:
+       return ArgumentTree()
+
+
+def loadDefaultArgumentTree():
+    cfg = ArgumentTree()
+    cfg.update( loadCoreConfiguration() )
+    cfg.update( loadSystemConfiguration() )
+    cfg.update( loadUserConfiguration() )
+    return cfg
+    
+
+def argumentTreeUpdatedOnBase( initialcfgName, cfgMap, recursive = True ):
+    if initialcfgName not in cfgMap:
         return ArgumentTree()
 
-    currentArguments = argumentsMap[ initialArgumentsName ].clone()
+    currentcfg = cfgMap[ initialcfgName ].clone()
     
-    if not currentArguments.contains('base'):
-        currentArguments.set( initialArgumentsName, '*base-name' )
-        return currentArguments
+    if not currentcfg.contains('base'):
+        currentcfg.set( initialcfgName, '*base-name' )
+        return currentcfg
     else:
-        newArguments = None
+        newcfg = None
         
         if recursive:
-            newArguments = argumentTreeUpdatedOnBase( currentArguments.get('base'), argumentsMap )
+            newcfg = argumentTreeUpdatedOnBase( currentcfg.get('base'), cfgMap )
         else:
-            newArguments = argumentsMap[ currentArguments.get('base') ].clone()
+            newcfg = cfgMap[ currentcfg.get('base') ].clone()
 
-        currentArguments.unset('base')
-        newArguments.update( currentArguments )
-        return newArguments
+        currentcfg.unset('base')
+        newcfg.update( currentcfg )
+        return newcfg
 
-def selectSubTreeWithBase( arguments, *path ):
+def selectSubTreeWithBase( cfg, *path ):
     pathToDefault = path + ('default',)
-    targetName = arguments.get( *pathToDefault )
+    targetName = cfg.get( *pathToDefault )
     
     def toSubTree( kv ):
         k, v = kv
         return ( k, ArgumentTree( v ) )
-    cotargets = arguments.get( *path )
-    argumentsMap = dict( map( toSubTree, cotargets.items() ) )
+    ##TODO change the cotarget path to go under a "presets" tag
+    #cotargets = dict( cfg.get( *path ) )
+    #del cotargets['default']
+    pathToPresets = path + ('presets',)
+    presets = cfg.get( *pathToPresets )
+    cfgMap = dict( map( toSubTree, presets.items() ) )
     
     
-    targetArguments = argumentTreeUpdatedOnBase( targetName, argumentsMap )
-    return targetName, targetArguments
+    targetcfg = argumentTreeUpdatedOnBase( targetName, cfgMap )
+    return targetName, targetcfg
     
         
 
-def selectTokenizer( arguments, lexicon ):
-    tokenizerName, tokenizerArguments = selectSubTreeWithBase( arguments, 'tokenizer' )
-    tokenizerAlgorithm = tokenizerArguments.get( 'algorithm' ) or tokenizerArguments.get( '*base-name' )
+def selectTokenizer( cfg, lexicon ):
+    tokenizerName, tokenizercfg = selectSubTreeWithBase( cfg, 'tokenizer' )
+    tokenizerAlgorithm = tokenizercfg.get( 'algorithm' ) or tokenizercfg.get( '*base-name' )
     
 
     #Solve aliases
@@ -83,7 +119,7 @@ def selectTokenizer( arguments, lexicon ):
     if tokenizerAlgorithm == "utf8":
         tokenizer =  MainTokenizers.UnicodeTokenizer()
     elif tokenizerAlgorithm == "ll1":
-        tokens = tokenizerArguments.get( 'token-list', default="" ).split(",")
+        tokens = tokenizercfg.get( 'token-list', default="" ).split(",")
         tokenizer =  MainTokenizers.LL1Tokenizer( tokens )
     else:
         tokenizer = None
@@ -91,33 +127,33 @@ def selectTokenizer( arguments, lexicon ):
         
     
     #Notification for verbose mode
-    if arguments.get('verbose'):
+    if cfg.get('verbose'):
         print( 'Choosing tokenizer %s' % repr(tokenizerAlgorithm) )
     
     return tokenizer
 
 #TODO receive a tokenized lexicon
-def selectGenerator( arguments, lexicon ):
-    generatorName, generatorArguments = selectSubTreeWithBase( arguments, 'generator' )
-    generatorAlgorithm = generatorArguments.get( 'algorithm' ) or generatorArguments.get( '*base-name' )
+def selectGenerator( cfg, lexicon ):
+    generatorName, generatorcfg = selectSubTreeWithBase( cfg, 'generator' )
+    generatorAlgorithm = generatorcfg.get( 'algorithm' ) or generatorcfg.get( '*base-name' )
     
     #Select algorithm
     if generatorAlgorithm == "markov":
         generator = Markov.Generator( 
                 lexicon,
-                nGramLength = generatorArguments.get( 'ngram-size', default=2 ),
-                minNameLength = generatorArguments.get( 'min-length', default=0 ),
-                maxNameLength = generatorArguments.get( 'truncation-length', default=256 ),
-                #verbose = arguments.get('verbose'),
+                nGramLength = generatorcfg.get( 'ngram-size', default=2 ),
+                minNameLength = generatorcfg.get( 'min-length', default=0 ),
+                maxNameLength = generatorcfg.get( 'truncation-length', default=256 ),
+                #verbose = cfg.get('verbose'),
                 )
 
     elif generatorAlgorithm == "smooth-markov":
         generator = SmoothMarkov.Generator( 
                 lexicon,
                 minNGramLength = 0,
-                maxNGramLength = generatorArguments.get( 'ngram-size', default=2 ),
-                minNameLength = generatorArguments.get( 'min-length', default=0 ),
-                maxNameLength = generatorArguments.get( 'truncation-length', default=256 ),
+                maxNGramLength = generatorcfg.get( 'ngram-size', default=2 ),
+                minNameLength = generatorcfg.get( 'min-length', default=0 ),
+                maxNameLength = generatorcfg.get( 'truncation-length', default=256 ),
                 generateDelimiterSymbols = True,
                 )
     else:
@@ -125,57 +161,58 @@ def selectGenerator( arguments, lexicon ):
         fail( 'No valid generator with name %s' % repr(generatorAlgorithm) )
 
     #Notification for verbose mode
-    if arguments.get('verbose'):
+    if cfg.get('verbose'):
         print( 'Choosing generator %s' % repr(generatorAlgorithm) )
         
     return generator
 
 # Return a list of filter to discard some generated results
-def selectFilters( arguments, lexicon ):
+def selectFilters( cfg, lexicon ):
+    generatorPresetName, filtersCfg = selectSubTreeWithBase( cfg, 'filters' )
 
     filters = []
 
     #OriginalOnlyFilter
-    if arguments.get( 'filters', 'original' ) == True:
+    if filtersCfg.get( 'original' ) == True:
         filters.append(   MainFilters.OriginalOnlyFilter( lexicon )   )
 
     #NameLengthFilter
-    minLength = arguments.get( 'filters', 'min-length', default=0 )
-    maxLength = arguments.get( 'filters', 'max-length', default=float("inf") )
+    minLength = filtersCfg.get( 'min-length', default=0 )
+    maxLength = filtersCfg.get( 'max-length', default=float("inf") )
     if minLength > 0 or maxLength < float("inf"):
         filters.append(   MainFilters.NameLengthFilter( minLength, maxLength )   )
         
-    if arguments.contains( 'filters', 'regex' ):
-        pattern = arguments.get( 'filters', 'regex' )
+    if filtersCfg.contains( 'regex' ):
+        pattern = filtersCfg.get( 'regex' )
         filters.append( MainFilters.RegexFilter( pattern ) )
 
     return MainFilters.AggregateFilter( filters )
     
 
-def selectLexiconTokenizerGeneratorFilters( arguments ):
-    lexicon = arguments.get('*cached-lexicon', default=None )
+def selectLexiconTokenizerGeneratorFilters( cfg ):
+    lexicon = cfg.get('*cached-lexicon', default=None )
     if lexicon == None:
-        files = arguments.get('lexicon','*selected_files') or arguments.get('lexicon','files') or []
+        files = cfg.get('lexicon','*selected_files') or cfg.get('lexicon','files') or []
         lexicon = Loader.loadLexicon(
                 *files,
-                uniformWeights = arguments.get('lexicon','uniform'),
-                forceLowerCase = arguments.get('lexicon','ignore-case')
+                uniformWeights = cfg.get('lexicon','uniform'),
+                forceLowerCase = cfg.get('lexicon','ignore-case')
                 )
 
-    tokenizer = selectTokenizer( arguments, lexicon )
+    tokenizer = selectTokenizer( cfg, lexicon )
     def to_token_sequence( keyval ):
         return tokenizer.tokenize( keyval[0] ), keyval[1]
     tokenized_lexicon = dict( map( to_token_sequence , lexicon.items() ) )
 
-    generator = selectGenerator( arguments, tokenized_lexicon )
-    filters = selectFilters( arguments, lexicon )
+    generator = selectGenerator( cfg, tokenized_lexicon )
+    filters = selectFilters( cfg, lexicon )
     return lexicon, tokenizer, generator, filters
 
-def generate( arguments ):
-    lexicon, tokenizer, generator, filters = selectLexiconTokenizerGeneratorFilters( arguments )
+def generate( cfg ):
+    lexicon, tokenizer, generator, filters = selectLexiconTokenizerGeneratorFilters( cfg )
 
-    number_to_generate = arguments.get('number', default=1)
-    max_loops = arguments.get( 'infinity-threshold', default=65535 )
+    number_to_generate = cfg.get('number', default=1)
+    max_loops = cfg.get( 'infinity-threshold', default=65535 )
     for i in range(number_to_generate):
     
         has_generated_a_valid_name = False
@@ -185,13 +222,13 @@ def generate( arguments ):
             try:
                 weight, name = generator.generateName()
             except InvalidGeneratedWord as e:
-                if arguments.get( 'verbose', default=False ):
+                if cfg.get( 'verbose', default=False ):
                     print("%.4f <!> %s <!> %s" % (e.weight, e.word, str(e) ) )
                 continue
             
             valid = filters.validate( name )
             
-            if arguments.get('verbose'):
+            if cfg.get('verbose'):
                 validitySymbol = "(+)" if valid else "(-)"
                 print("%.4f %s %s" % (weight, validitySymbol, name) )
 

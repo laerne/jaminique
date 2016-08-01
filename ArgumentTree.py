@@ -39,7 +39,19 @@ def recursiveUpdate( dictionary1, dictionary2 ):
 
 class ArgumentTree(object):
     def __init__( self, defaultArgumentTree = {} ):
-        self.args = deepcopy( defaultArgumentTree )
+        if type( defaultArgumentTree ) == dict:
+            self.args = deepcopy( defaultArgumentTree )
+        elif type( defaultArgumentTree ) == ArgumentTree:
+            self.args = deepcopy( defaultArgumentTree.args )
+        elif type( defaultArgumentTree ) == str:
+            print( '!!!', defaultArgumentTree )
+            self.args = json.loads( defaultArgumentTree )
+        elif hasattr( defaultArgumentTree, 'read' ):
+            self.args = json.load( defaultArgumentTree )
+        else:
+            #TODO raise BadArgumentException()
+            self.args = None
+            
     
     def update( self, other ):
         if type( other ) == dict:
