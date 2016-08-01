@@ -14,6 +14,14 @@
       <column type="gchararray"/>
     </columns>
   </object>
+  <object class="GtkListStore" id="filters_presets">
+    <columns>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name font -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkListStore" id="generated_names">
     <columns>
       <!-- column-name name -->
@@ -37,6 +45,14 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkListStore" id="tokenizer_algorithms">
+    <columns>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name font -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can_focus">False</property>
     <property name="default_width">800</property>
@@ -57,15 +73,35 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
+                  <object class="GtkComboBox" id="tokenizer_algo_selector">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="model">tokenizer_algorithms</property>
+                    <signal name="changed" handler="on_tokenizer_algo_selector_changed" swapped="no"/>
+                    <child>
+                      <object class="GtkCellRendererText" id="tokenizer_name_renderer"/>
+                      <attributes>
+                        <attribute name="font">1</attribute>
+                        <attribute name="text">0</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
                   <object class="GtkComboBox" id="generation_algo_selector">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="model">generation_algorithms</property>
                     <property name="active">0</property>
                     <property name="id_column">0</property>
-                    <signal name="changed" handler="on_select_generation_algo" swapped="no"/>
+                    <signal name="changed" handler="on_generation_algo_selector_changed" swapped="no"/>
                     <child>
-                      <object class="GtkCellRendererText" id="combo_algo">
+                      <object class="GtkCellRendererText" id="generation_name_renderer">
                         <property name="cell_background_gdk">#000000000000</property>
                         <property name="cell_background_rgba">rgba(0,0,0,0)</property>
                         <property name="xpad">2</property>
@@ -85,11 +121,26 @@
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
-                  <placeholder/>
+                  <object class="GtkComboBox" id="filters_algo_selector">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="model">filters_presets</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="filters_name_renderer"/>
+                      <attributes>
+                        <attribute name="text">0</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
                 </child>
               </object>
               <packing>
@@ -144,7 +195,7 @@
                     <property name="receives_default">True</property>
                     <property name="use_stock">True</property>
                     <property name="always_show_image">True</property>
-                    <signal name="clicked" handler="on_generate_button_clicked" object="dictionaries_view-selection" swapped="no"/>
+                    <signal name="clicked" handler="on_generate_button_clicked" object="lexicon_view-selection" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -181,13 +232,13 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <child>
-                      <object class="GtkTreeView" id="dictionaries_view">
+                      <object class="GtkTreeView" id="lexicon_view">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="model">dictionaries</property>
                         <property name="search_column">1</property>
                         <child internal-child="selection">
-                          <object class="GtkTreeSelection" id="dictionaries_view-selection">
+                          <object class="GtkTreeSelection" id="lexicon_view-selection">
                             <property name="mode">multiple</property>
                           </object>
                         </child>
@@ -271,7 +322,7 @@
                     <property name="can_focus">False</property>
                     <property name="homogeneous">True</property>
                     <child>
-                      <object class="GtkButton" id="remove_dictionary_button">
+                      <object class="GtkButton" id="remove_lexicon_button">
                         <property name="label">gtk-remove</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -280,7 +331,7 @@
                         <property name="use_stock">True</property>
                         <property name="image_position">top</property>
                         <property name="always_show_image">True</property>
-                        <signal name="clicked" handler="on_remove_lexicon" object="dictionaries_view-selection" swapped="no"/>
+                        <signal name="clicked" handler="on_remove_lexicon" object="lexicon_view-selection" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -289,7 +340,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="add_dictionary_button">
+                      <object class="GtkButton" id="add_lexicon_button">
                         <property name="label">gtk-add</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -298,7 +349,7 @@
                         <property name="use_stock">True</property>
                         <property name="image_position">top</property>
                         <property name="always_show_image">True</property>
-                        <signal name="clicked" handler="on_add_lexicon" object="dictionaries_view-selection" swapped="no"/>
+                        <signal name="clicked" handler="on_add_lexicon" object="lexicon_view-selection" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -307,7 +358,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="add_dictionary_edit">
+                      <object class="GtkButton" id="edit_lexicon_button">
                         <property name="label">gtk-edit</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -316,7 +367,7 @@
                         <property name="use_stock">True</property>
                         <property name="image_position">top</property>
                         <property name="always_show_image">True</property>
-                        <signal name="clicked" handler="on_edit_lexicon" object="dictionaries_view-selection" swapped="no"/>
+                        <signal name="clicked" handler="on_edit_lexicon" object="lexicon_view-selection" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>

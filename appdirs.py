@@ -555,3 +555,5 @@ if __name__ == "__main__":
     dirs = AppDirs(appname, appauthor=False)
     for prop in props:
         print("%s: %s" % (prop, getattr(dirs, prop)))
+
+

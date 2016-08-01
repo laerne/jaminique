@@ -41,10 +41,11 @@ argparsedNameToPathMap = {
     'tokenizer' : ['tokenizer','default'],
     'generator' : ['generator','default'],
     'files' : ['lexicon','files'],
+    #'ngram_size' : ['generator','presets','*', 'ngram-size'],
     #markov
-    'markov_ngram_size' : ['generator','markov','ngram-size'],
+    'markov_ngram_size' : ['generator','presets','markov','ngram-size'],
     #smooth-markov
-    'smooth_markov_ngram_size' : ['generator','smooth-markov','ngram-size'],
+    'smooth_markov_ngram_size' : ['generator','presets','smooth-markov','ngram-size'],
 }
 
 #Convert a argparser name into a tree arborescence.
