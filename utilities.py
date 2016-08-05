@@ -53,6 +53,7 @@ def dichotomicfind( random_access_collection, element ):
 def perplx( p, n ):
     return (p**(-1/n)) if n>0 else 0
 
+#TODO rename this to WeightedDiscretePicker
 class DiscretePicker:
     def __init__( self, probabilities ):
         self.cumulative_probabilities = []
@@ -78,6 +79,47 @@ def discretepick( probabilities ):
     return picker.pick()
 
 
+class DeterministicPicker:
+    def __init__( self, value ):
+        self.value = value
+    def pick( self ):
+        return self.value
+
+class GeometricPicker:
+    def __init__( self, p ):
+        self.p = p
+    def pick( self ):
+        accumulator = 0
+        while random.random() < self.p:
+            accumulator += 1
+        return accumulator
+
+class BinomialPicker:
+    def __init__( self, p, n ):
+        self.p = p
+        self.n = n
+    def pick( self ):
+        accumulator = 0
+        for i in range(self.n):
+            if random.random() < self.p:
+                accumulator += 1
+        return accumulator
+
+class UniformPicker:
+    def __init__( self, left_bound, right_bound ):
+        self.a = left_bound
+        self.b = right_bound
+        self.type = type
+    def pick( self ):
+        return round( random.uniform( self.a, self.b ) )
+
+class GaussPicker:
+    def __init__( self, mu, sigma ):
+        self.mu = mu
+        self.sigma = sigma
+    def pick( self ):
+        return round( random.gauss( self.mu, self.sigma ) )
+
 class InvalidGeneratedWord(Exception):
     def __init__( self, message, word, weight ):
         self.message = message if message != None else "Partially generated word is invalid."
@@ -85,3 +127,4 @@ class InvalidGeneratedWord(Exception):
         self.weight = weight
     def __str__( self ):
         return self.message
+

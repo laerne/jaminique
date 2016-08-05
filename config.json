@@ -51,12 +51,21 @@
             , "ngram-size" : 2
             , "min-length" : 8
             }
+        , "portmanteau" :
+            { "algorithm" : "portmanteau"
+            , "size" : 2
+            }
+        , "pick a word" :
+            { "algorithm" : "portmanteau"
+            , "size" : 1
+            }
         }
     }
 , "filters" :
-    { "default" : "original"
+    { "default" : "none"
     , "presets" : 
-        { "original" : 
+        { "none" : {}
+        , "original" : 
             { "min-length" : 3
             , "max-length" : 24
             , "original" : true

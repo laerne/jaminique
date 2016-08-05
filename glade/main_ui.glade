@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.18.3 -->
+<!-- Generated with glade 3.19.0 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkTreeStore" id="dictionaries">
@@ -101,17 +101,7 @@
                     <property name="id_column">0</property>
                     <signal name="changed" handler="on_generation_algo_selector_changed" swapped="no"/>
                     <child>
-                      <object class="GtkCellRendererText" id="generation_name_renderer">
-                        <property name="cell_background_gdk">#000000000000</property>
-                        <property name="cell_background_rgba">rgba(0,0,0,0)</property>
-                        <property name="xpad">2</property>
-                        <property name="ypad">2</property>
-                        <property name="xalign">0</property>
-                        <property name="background_gdk">#000000000000</property>
-                        <property name="foreground_gdk">#000000000000</property>
-                        <property name="background_rgba">rgba(0,0,0,0)</property>
-                        <property name="foreground_rgba">rgba(0,0,0,0)</property>
-                      </object>
+                      <object class="GtkCellRendererText" id="generation_name_renderer"/>
                       <attributes>
                         <attribute name="font">1</attribute>
                         <attribute name="text">0</attribute>
@@ -129,9 +119,11 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="model">filters_presets</property>
+                    <signal name="changed" handler="on_filters_algo_selector_changed" swapped="no"/>
                     <child>
                       <object class="GtkCellRendererText" id="filters_name_renderer"/>
                       <attributes>
+                        <attribute name="font">1</attribute>
                         <attribute name="text">0</attribute>
                       </attributes>
                     </child>
