@@ -19,10 +19,12 @@ import Loader
 import MainFilters
 import Markov
 import SmoothMarkov
+import CompoundWord
 import json
 import MainTokenizers
 
 from utilities import warn, fail, InvalidGeneratedWord
+from utilities import DeterministicPicker, GeometricPicker, BinomialPicker, UniformPicker, GaussPicker
 
 import appdirs
 import os.path
@@ -128,7 +130,7 @@ def selectTokenizer( cfg, lexicon ):
     
     #Notification for verbose mode
     if cfg.get('verbose'):
-        print( 'Choosing tokenizer %s' % repr(tokenizerAlgorithm) )
+        print( 'Choosing tokenizer %s using settings %s' % (repr(tokenizerAlgorithm),repr(tokenizerName)) )
     
     return tokenizer
 
@@ -156,19 +158,24 @@ def selectGenerator( cfg, lexicon ):
                 maxNameLength = generatorcfg.get( 'truncation-length', default=256 ),
                 generateDelimiterSymbols = True,
                 )
+    elif generatorAlgorithm == "portmanteau":
+        generator = CompoundWord.Generator( 
+                lexicon,
+                length_rv = DeterministicPicker( value = generatorcfg.get('size') ),
+                )
     else:
         generator = None
         fail( 'No valid generator with name %s' % repr(generatorAlgorithm) )
 
     #Notification for verbose mode
     if cfg.get('verbose'):
-        print( 'Choosing generator %s' % repr(generatorAlgorithm) )
+        print( 'Choosing generator %s using settings %s' % (repr(generatorAlgorithm),repr(generatorName)) )
         
     return generator
 
 # Return a list of filter to discard some generated results
 def selectFilters( cfg, lexicon ):
-    generatorPresetName, filtersCfg = selectSubTreeWithBase( cfg, 'filters' )
+    filtersPresetName, filtersCfg = selectSubTreeWithBase( cfg, 'filters' )
 
     filters = []
 
@@ -185,6 +192,9 @@ def selectFilters( cfg, lexicon ):
     if filtersCfg.contains( 'regex' ):
         pattern = filtersCfg.get( 'regex' )
         filters.append( MainFilters.RegexFilter( pattern ) )
+
+    if cfg.get('verbose'):
+        print( 'Choosing filters using settings %s' % (repr(filtersPresetName)) )
 
     return MainFilters.AggregateFilter( filters )
     
