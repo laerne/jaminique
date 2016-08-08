@@ -120,12 +120,16 @@ def selectTokenizer( cfg, lexicon ):
     #Select algorithm
     if tokenizerAlgorithm == "utf8":
         tokenizer =  MainTokenizers.UnicodeTokenizer()
+    elif tokenizerAlgorithm == "uniform-case":
+        tokenizer =  MainTokenizers.UniformCaseTokenizer(
+            target_case = tokenizercfg.get( 'case', default="lower" )
+            )
     elif tokenizerAlgorithm == "ll1":
         tokens = tokenizercfg.get( 'token-list', default="" ).split(",")
         tokenizer =  MainTokenizers.LL1Tokenizer( tokens )
     else:
         tokenizer = None
-        fail( 'No valid tokenizer with name %s' % repr(tokenizerAlgorithm) )
+        raise InvalidTokenizerName( name = tokenizerAlgorithm )
         
     
     #Notification for verbose mode
@@ -165,7 +169,7 @@ def selectGenerator( cfg, lexicon ):
                 )
     else:
         generator = None
-        fail( 'No valid generator with name %s' % repr(generatorAlgorithm) )
+        raise InvalidGeneratorName( name = generatorAlgorithm )
 
     #Notification for verbose mode
     if cfg.get('verbose'):
@@ -248,7 +252,38 @@ def generate( cfg ):
                 break
                 
         if not has_generated_a_valid_name:
-            fail( "Could not generate valid name in less than %d attempts" % max_loops )
+            raise TooManyIterations(
+                    message = "Could not generate valid name in less than %d attempts" % max_loops,
+                    nb_iterations = max_loops,
+                    )
             break
                 
             
+class InvalidAlgorithmName(Exception):
+    def __init__( self, name, message = None ):
+        self.name = name
+        
+        if message == None:
+            message = "Invalid algorithm name %s." % repr(name)
+        super(InvalidAlgorithmName,self).__init__( message )
+
+class InvalidTokenizerName(InvalidAlgorithmName):
+    def __init__( self, name, message = None ):
+        if message == None:
+            message = "Invalid tokenizer algorithm name %s." % repr(name)
+        super(InvalidTokenizerName,self).__init__( name, message )
+
+class InvalidGeneratorName(InvalidAlgorithmName):
+    def __init__( self, name, message = None ):
+        if message == None:
+            message = "Invalid generator algorithm name %s." % repr(name)
+        super(InvalidGeneratorName,self).__init__( name, message )
+
+class TooManyIterations(Exception):
+    def __init__( self, nb_iterations, message = None ):
+        self.nb_iterations = nb_iterations
+        
+        if message == None:
+            self.message = "Reached the iteration ceiling '%d'." % nb_iterations
+        super(TooManyIterations,self).__init__( message )
+

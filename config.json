@@ -9,9 +9,9 @@
     { "uniform" : false
     , "ignore-case" : false
     , "files" :
-      [ "namelists/viking_female.txt"
-      , "namelists/viking_male.txt"
-      , "namelists/viking_unknownGender.txt"
+      [ "lexicons/viking_female.txt"
+      , "lexicons/viking_male.txt"
+      , "lexicons/viking_unknownGender.txt"
       ]
     }
 , "tokenizer" :
@@ -20,7 +20,11 @@
         { "unicode" :
             { "algorithm" : "unicode"
             }
-        , "english" :
+        , "lower case" :
+            { "algorithm" : "uniform-case"
+            , "case" : "lower"
+            }
+        , "english phonemes" :
             { "algorithm" : "ll1"
             , "token-list" : "eau,eue,ewe,ieu,iew,oeu,aa,ah,ae,ai,ao,au,aw,ay,ee,ei,ey,eo,eu,ew,ie,oa,oe,oi,oo,ou,ow,oy,ue,ui,uu,uy,dge,dgi,dgy,pph,rrh,sce,sci,scy,sch,tch,xce,xci,bb,cc,ch,ck,dd,dh,ff,gg,gh,kk,kh,ll,mm,nn,ng,pp,ph,qu,rr,rh,sh,ss,sw,tt,th,vv,wh,wr,xh,zz,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"
 
@@ -36,17 +40,19 @@
             , "min-length" : 3
             , "truncation-length" : 48
             }
-        , "smooth-markov" :
+        , "smooth markov" :
             { "algorithm" : "smooth-markov"
             , "ngram-size" : 2
             , "min-length" : 3
             , "truncation-length" : 48
             }
         , "noise" :
-            { "base" : "markov"
+            { "algorithm" : "markov"
             , "ngram-size" : 0
+            , "min-length" : 1
+            , "truncation-length" : 48
             }
-        , "long-markov" :
+        , "long markov" :
             { "base" : "markov"
             , "ngram-size" : 2
             , "min-length" : 8

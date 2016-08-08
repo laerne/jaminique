@@ -150,8 +150,22 @@ class GUIHandler(object):
         selected_files = list( self.lexicon_files_manager.yield_filepaths_from_selection() )
         self.arguments.set( selected_files, 'lexicon', '*selected_files' )
 
-        for perplexity, name in Selector.generate( self.arguments ):
-            self.builder.get_object("generated_names").append((name,perplexity))
+        try:
+            for perplexity, name in Selector.generate( self.arguments ):
+                self.builder.get_object("generated_names").append((name,perplexity))
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+
+            dialog = Gtk.MessageDialog(
+                    self.builder.get_object("main_window"),
+                    0,
+                    Gtk.MessageType.WARNING,
+                    Gtk.ButtonsType.OK,
+                    "Generation raised exception of type \"%s\":\n\n\"%s\"" % (type(e).__name__,str(e)) )
+            dialog.run()
+            dialog.destroy()
+            
 
         return True
 
