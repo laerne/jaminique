@@ -1,6 +1,18 @@
 class UnicodeTokenizer:
     def tokenize( self, name ):
         return tuple( name )
+
+class UniformCaseTokenizer:
+    def __init__( self, target_case = "lower" ):
+        if target_case == "upper":
+            self.case_fct = str.upper
+        elif target_case == "lower":
+            self.case_fct = str.lower
+        else:
+            self.case_fct = str.lower
+            
+    def tokenize( self, name ): 
+        return tuple( self.case_fct(name) )
         
 class LL1Tokenizer:
     def __init__( self, tokens ):
