@@ -32,20 +32,10 @@ argparsedNameToPathMap = {
     'seed' : ['seed'],
     'verbose' : ['verbose'],
     'gui' : ['gui','enabled'],
-    'uniform' : ['lexicon','uniform'],
-    'ignore_case' : ['lexicon','ignore-case'],
-    'min_length' : ['filters','min-length'],
-    'max_length' : ['filters','max-length'],
-    'original' : ['filters','original'],
-    'regex' : ['filters','regex'],
     'tokenizer' : ['tokenizer','default'],
     'generator' : ['generator','default'],
+    'filters' : ['filters','default'],
     'files' : ['lexicon','files'],
-    #'ngram_size' : ['generator','presets','*', 'ngram-size'],
-    #markov
-    'markov_ngram_size' : ['generator','presets','markov','ngram-size'],
-    #smooth-markov
-    'smooth_markov_ngram_size' : ['generator','presets','smooth-markov','ngram-size'],
 }
 
 #Convert a argparser name into a tree arborescence.
@@ -69,37 +59,20 @@ argparser.add_argument( '-n', '--number', action='store', type=int,
 argparser.add_argument( '-S', '--seed', action='store', type=int,
         help="seed for the random generator.  If this option is not provided, the current system time is used as a seed." )
 argparser.add_argument( '-G', '--gui', action='store_true', default=None,
-        help="Load the program with the GUI." )
-argparser.add_argument( '-B', '--batch', action='store_false', dest='gui' )
+        help="load the program with the GUI." )
+argparser.add_argument( '-B', '--batch', action='store_false', dest='gui',
+        help="run the program non-interactively." )
 argparser.add_argument( '-v', '--verbose', action='store_true', default=None,
         help="print additional information like the perplexity." )
-argparser.add_argument( '-q', '--quiet', action='store_false', dest='verbose' )
-argparser.add_argument( '-u', '--uniform', action='store_true', default=None,
-        help="ignore possible word weight and set them all to 1" )
-argparser.add_argument( '--weighted', action='store_false', dest='uniform' )
-argparser.add_argument( '-i', '--ignore-case', action='store_true', default=None,
-        help="ignore case of lexicon files (generate all lowercase words)" )
-argparser.add_argument( '--acknowledge-case', action='store_false', dest='ignore_case' )
-argparser.add_argument( '-l', '--min-length', action='store', type=int,
-        help="minimun length of a generated name" )
-argparser.add_argument( '-L', '--max-length', action='store', type=int,
-        help="maximum length of a generated name" )
-argparser.add_argument( '-o', '--original', action='store_true', default=None,
-        help="discard words already existing in the lexicon" )
-argparser.add_argument( '-r', '--regex', '--match-regex', metavar = 'PATTERN', action='store', default=None,
-        help="discard words that do not match the given (PRCE) regular expression" )
-argparser.add_argument( '-a', '--any', action='store_false', dest='original',
-        help="allow to generate words already existing in the lexicon" )
-argparser.add_argument( '-t', '--tokenizer', metavar = 'ALGO', action='store',
+argparser.add_argument( '-q', '--quiet', action='store_false', dest='verbose',
+        help="do not print additional information like the perplexity." )
+argparser.add_argument( '-t', '--tokenizer', metavar = 'PRESET', action='store',
         help="""algorithm or preset used to split characters/phonems from the names.""")
-argparser.add_argument( '-g', '--generator', metavar = 'ALGO', action='store',
+argparser.add_argument( '-g', '--generator', metavar = 'PRESET', action='store',
         help="""algorithm or preset used to generate the names.""" )
-#markov options
-argparser.add_argument( '--markov-ngram-size', metavar='SIZE', action='store', type=int,
-        help="In the 'markov' algorihm, set how many previous characters are looked to choose the next one" )
-#smooth markov options
-argparser.add_argument( '--smooth-markov-ngram-size', metavar='SIZE', action='store', type=int,
-        help="In the 'smooth-markov' algorihm, set how many previous characters are looked to choose the next one" )
+argparser.add_argument( '-f', '--filters', metavar = 'PRESET', action='store',
+        help="""Presets of filters to apply on generated names.""" )
+
 #non-options arguments (lexicon files)
 argparser.add_argument( 'files', metavar='FILE', action='store', nargs='*', default=argparse.SUPPRESS,
         help='dictonary files to learn names from' )

@@ -207,11 +207,10 @@ def selectLexiconTokenizerGeneratorFilters( cfg ):
     lexicon = cfg.get('*cached-lexicon', default=None )
     if lexicon == None:
         files = cfg.get('lexicon','*selected_files') or cfg.get('lexicon','files') or []
-        lexicon = Loader.loadLexicon(
-                *files,
-                uniformWeights = cfg.get('lexicon','uniform'),
-                forceLowerCase = cfg.get('lexicon','ignore-case')
-                )
+        if cfg.get('lexicon','use_patterns',default=True):
+            lexicon = Loader.loadLexiconsFromPatterns( files )
+        else:
+            lexicon = Loader.loadLexicons( files )
 
     tokenizer = selectTokenizer( cfg, lexicon )
     def to_token_sequence( keyval ):

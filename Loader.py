@@ -18,7 +18,8 @@ import fileinput
 from utilities import warn, fail
 
 import os.path
-from glob import glob, iglob
+import os
+from glob import iglob
 
 
 def selectFilesFromDirs( *filepaths ):
@@ -34,32 +35,25 @@ def selectFilesFromDirs( *filepaths ):
         else:
             pass
             
-def loadLexiconDir( *filepaths,
-        uniformWeights = False,
-        forceLowerCase = False ):
+def loadLexiconDir( *filepaths ):
     actualLexiconPaths = selectFilesFromDirs( *filepaths )
     return loadLexicon( *actualLexiconPaths )
             
 
-def loadLexicon( *filepaths,
-        uniformWeights = False,
-        forceLowerCase = False ):
+def loadLexiconFile( *lexiconFilepaths ):
     lexicon = {}
-    with fileinput.input( filepaths, openhook=fileinput.hook_encoded("UTF-8") ) as lines:
+    with fileinput.input( lexiconFilepaths, openhook=fileinput.hook_encoded("UTF-8") ) as lines:
         for line in lines:
-            item = line.split('#')[0].strip()
-            tokens = item.split(':')
+            item = line.split('#',maxsplit=1)[0].strip()
+            tokens = item.rsplit( ':', maxsplit=1 )
             word = tokens[0]
-            if forceLowerCase:
-                word = word.lower()
             if word == '':
                 continue
                 
             try:
-                weight = float(tokens[1]) if not uniformWeights and len( tokens ) >= 2 else 1.0
+                weight = float(tokens[1]) if len( tokens ) >= 2 else 1.0
             except ValueError as e:
-                from utilities import warn
-                warn( "Incorrect weight value.  Defaulting to 1." )
+                warn( "Incorrect weight value %s.  Defaulting to 1." % repr(tokens[1]) )
                 weight = 1.0
             if word in lexicon:
                 lexicon[word] += weight
@@ -67,8 +61,33 @@ def loadLexicon( *filepaths,
                 lexicon[word] = weight
     return lexicon
 
+def loadLexicon( filepath ):
+    if os.path.isdir( filepath ):
+        childrenpaths = map(
+                lambda name: os.path.join( filepath, name ),
+                os.listdir( filepath ) )
+        return loadLexicons( childrenpaths )
+    else:
+        return loadLexiconFile( filepath )
 
-def mergeLexicons( *dictionaries ):
+
+def loadLexicons( filepaths ):
+    return mergeLexicons( map( loadLexicon, filepaths ) )
+
+
+def loadLexiconsFromPattern( pattern ):
+    lexicons = map( loadLexicon, iglob( pattern ) )
+    return mergeLexicons( lexicons )
+
+
+def loadLexiconsFromPatterns( patterns ):
+    lexicons = []
+    for pattern in patterns:
+        lexicons += map( loadLexicon, iglob( pattern ) )
+    return mergeLexicons( lexicons )
+
+
+def mergeLexicons( dictionaries ):
     merged = {}
     for lexicon in dictionaries:
         for key, value in lexicon.items():
@@ -77,11 +96,6 @@ def mergeLexicons( *dictionaries ):
             else:
                 merged[key] = value
     return merged
-    
-def mergeLexicon( editedLexicon, appendedLexicon ):
-    for key, value in appendedLexicon.items():
-        if key in editedLexicon:
-            editedLexicon[key] += value
-        else:
-            editedLexicon[key] = value
-    return editedLexicon
+
+def mergeLexicon( *dictionaries ):
+    return mergeLexicons( dictionaries )
