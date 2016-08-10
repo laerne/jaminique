@@ -16,7 +16,15 @@
             { "algorithm" : "unicode"
             }
         , "lower case" :
-            { "algorithm" : "uniform-case"
+            { "algorithm" : "unicode"
+            , "case" : "lower"
+            }
+        , "upper case" :
+            { "algorithm" : "unicode"
+            , "case" : "upper"
+            }
+        , "unidecode" :
+            { "algorithm" : "unidecode"
             , "case" : "lower"
             }
         , "english phonemes" :

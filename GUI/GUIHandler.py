@@ -147,6 +147,7 @@ class GUIHandler(object):
     ### GENERATION BUTTON MANAGEMENT ###
 
     def on_generate_button_clicked( self, selection ):
+        #TODO use cached small lexicons for name generation too.
         selected_files = list( self.lexicon_files_manager.yield_filepaths_from_selection() )
         self.arguments.set( selected_files, 'lexicon', '*selected_files' )
 
@@ -213,6 +214,7 @@ def process( arguments ):
     handler, builder = buildGUI( arguments )
 
     if arguments.get('gui','*autogenerate_at_start'):
+        selection = builder.get_object("lexicon_view-selection")
         handler.on_generate_button_clicked( selection )
 
     Gtk.main()

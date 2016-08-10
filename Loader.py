@@ -21,25 +21,42 @@ import os.path
 import os
 from glob import iglob
 
-
-def selectFilesFromDirs( *filepaths ):
-    candidates = list( filepaths )
-    dictionaries = []
-    while len(candidates) > 0:
-        candidate = candidates.pop(0)
-        if os.path.isdir( candidate ):
-            for subfile in subfiles(candidate):
-                candidates.append( subfiles )
-        elif os.path.splitext( candidate )[1] == '.txt':
-            dictionaries.append( candidate )
+#TODO management of symbolic links
+def findFilesFromDir( path ):
+    files = []
+    for name in os.listdir( path ):
+        subpath = os.path.join(path,name)
+        if os.path.isdir( subpath ):
+            files += findFilesFromDir( subpath )
         else:
-            pass
-            
-def loadLexiconDir( *filepaths ):
-    actualLexiconPaths = selectFilesFromDirs( *filepaths )
-    return loadLexicon( *actualLexiconPaths )
-            
+            files.append( subpath )
+    return files
 
+def findFilesFromPattern( pattern ):
+    files = []
+    for path in iglob( pattern ):
+        if os.path.isdir( path ):
+            files += findFilesFromDir( path )
+        else:
+            files.append( path )
+    return files
+        
+def findFilesFromPatterns( patterns ):
+    files = []
+    for pattern in patterns:
+        files += findFilesFromPattern( pattern )
+    return files
+
+def findFilesFromPaths( paths ):
+    files = []
+    for path in paths:
+        if os.path.isdir( path ):
+            files += findFilesFromDir( path )
+        else:
+            files.append( path )
+    return files
+    
+            
 def loadLexiconFile( *lexiconFilepaths ):
     lexicon = {}
     with fileinput.input( lexiconFilepaths, openhook=fileinput.hook_encoded("UTF-8") ) as lines:
@@ -62,29 +79,19 @@ def loadLexiconFile( *lexiconFilepaths ):
     return lexicon
 
 def loadLexicon( filepath ):
-    if os.path.isdir( filepath ):
-        childrenpaths = map(
-                lambda name: os.path.join( filepath, name ),
-                os.listdir( filepath ) )
-        return loadLexicons( childrenpaths )
-    else:
-        return loadLexiconFile( filepath )
+    return loadLexiconFile( *findFilesFromPaths( [filepath] ) )
 
 
 def loadLexicons( filepaths ):
-    return mergeLexicons( map( loadLexicon, filepaths ) )
+    return loadLexiconFile( *findFilesFromPaths( filepaths ) )
 
 
 def loadLexiconsFromPattern( pattern ):
-    lexicons = map( loadLexicon, iglob( pattern ) )
-    return mergeLexicons( lexicons )
+    return loadLexiconFile( *findFilesFromPattern( pattern ) )
 
 
 def loadLexiconsFromPatterns( patterns ):
-    lexicons = []
-    for pattern in patterns:
-        lexicons += map( loadLexicon, iglob( pattern ) )
-    return mergeLexicons( lexicons )
+    return loadLexiconFile( *findFilesFromPatterns( patterns ) )
 
 
 def mergeLexicons( dictionaries ):
