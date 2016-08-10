@@ -22,6 +22,7 @@ import SmoothMarkov
 import CompoundWord
 import json
 import MainTokenizers
+import Unidecode
 
 from utilities import warn, fail, InvalidGeneratedWord
 from utilities import DeterministicPicker, GeometricPicker, BinomialPicker, UniformPicker, GaussPicker
@@ -29,6 +30,7 @@ from utilities import DeterministicPicker, GeometricPicker, BinomialPicker, Unif
 import appdirs
 import os.path
 
+#TODO: Have dictionary files relative to the configuration file not sys.argv[0]
 def loadCoreConfiguration():
     from sys import argv
     config_path = os.path.join( os.path.dirname( argv[0] ), "config.json" )
@@ -119,14 +121,16 @@ def selectTokenizer( cfg, lexicon ):
 
     #Select algorithm
     if tokenizerAlgorithm == "utf8":
-        tokenizer =  MainTokenizers.UnicodeTokenizer()
-    elif tokenizerAlgorithm == "uniform-case":
-        tokenizer =  MainTokenizers.UniformCaseTokenizer(
-            target_case = tokenizercfg.get( 'case', default="lower" )
+        tokenizer =  MainTokenizers.UnicodeTokenizer(
+            target_case = tokenizercfg.get( 'case' )
             )
     elif tokenizerAlgorithm == "ll1":
         tokens = tokenizercfg.get( 'token-list', default="" ).split(",")
         tokenizer =  MainTokenizers.LL1Tokenizer( tokens )
+    elif tokenizerAlgorithm == "unidecode":
+        tokenizer = Unidecode.UnidecodeTokenizer(
+            target_case = tokenizercfg.get( 'case' )
+            )
     else:
         tokenizer = None
         raise InvalidTokenizerName( name = tokenizerAlgorithm )
@@ -204,13 +208,12 @@ def selectFilters( cfg, lexicon ):
     
 
 def selectLexiconTokenizerGeneratorFilters( cfg ):
-    lexicon = cfg.get('*cached-lexicon', default=None )
-    if lexicon == None:
-        files = cfg.get('lexicon','*selected_files') or cfg.get('lexicon','files') or []
-        if cfg.get('lexicon','use_patterns',default=True):
-            lexicon = Loader.loadLexiconsFromPatterns( files )
-        else:
-            lexicon = Loader.loadLexicons( files )
+    #TODO cache small lexicons in memory
+    files = cfg.get('lexicon','*selected_files') or cfg.get('lexicon','files') or []
+    if cfg.get('lexicon','use_patterns',default=True):
+        lexicon = Loader.loadLexiconsFromPatterns( files )
+    else:
+        lexicon = Loader.loadLexicons( files )
 
     tokenizer = selectTokenizer( cfg, lexicon )
     def to_token_sequence( keyval ):
@@ -236,14 +239,20 @@ def generate( cfg ):
                 weight, name = generator.generateName()
             except InvalidGeneratedWord as e:
                 if cfg.get( 'verbose', default=False ):
-                    print("%.4f <!> %s <!> %s" % (e.weight, e.word, str(e) ) )
+                    try:
+                        print("%.4f <!> %s <!> %s" % (e.weight, e.word, str(e) ) )
+                    except UnicodeError:
+                        print("%.4f <!> %s <!> %s" % (e.weight, e.word, str(e).encode('ascii','hreplace').decode('ascii') ) )
                 continue
             
             valid = filters.validate( name )
             
             if cfg.get('verbose'):
                 validitySymbol = "(+)" if valid else "(-)"
-                print("%.4f %s %s" % (weight, validitySymbol, name) )
+                try:
+                    print("%.4f %s %s" % (weight, validitySymbol, name) )
+                except UnicodeError:
+                    print("%.4f %s %s" % (weight, validitySymbol, name.encode('ascii','replace').decode('ascii')) )
 
             if valid:
                 yield weight, name

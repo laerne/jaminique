@@ -23,5 +23,8 @@ def process( arguments ):
         # if verbose is enabled, Selector.generate already printed the word,
         # so print it only in verbose is disabled
         if not arguments.get('verbose'):
-            print("%s" % name )
+            try:
+                print( ("%s" % name) )
+            except UnicodeError as e:
+                print( ("%s" % name).encode('ascii','backslashreplace') )
 

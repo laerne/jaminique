@@ -1,19 +1,21 @@
-class UnicodeTokenizer:
-    def tokenize( self, name ):
-        return tuple( name )
-
-class UniformCaseTokenizer:
-    def __init__( self, target_case = "lower" ):
-        if target_case == "upper":
-            self.case_fct = str.upper
-        elif target_case == "lower":
-            self.case_fct = str.lower
-        else:
-            self.case_fct = str.lower
-            
+class FctTokenizer:
+    def __init__( self, fct = (lambda x: x) ):
+        self.fct = fct
     def tokenize( self, name ): 
-        return tuple( self.case_fct(name) )
-        
+        return tuple( self.fct(name) )
+
+class FastUnicodeTokenizer:
+    def tokenize( self, name ): 
+        return tuple( name )
+    
+def UnicodeTokenizer(target_case = None ):
+    if target_case == "upper":
+        return FctTokenizer( str.upper )
+    elif target_case == "lower":
+        return FctTokenizer( str.lower )
+    else:
+        return FastUnicodeTokenizer()
+
 class LL1Tokenizer:
     def __init__( self, tokens ):
         lengths = sorted( set( map( len, tokens ) ), reverse = True )

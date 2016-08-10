@@ -18,7 +18,7 @@ from gi import require_version
 require_version('Gtk','3.0')
 from gi.repository import Gtk
 
-import Loader as Loader
+import Loader
 import os.path
 
 class LexiconFilesHandler:
@@ -32,7 +32,8 @@ class LexiconFilesHandler:
         self.populate_lexicon()
     
     def populate_lexicon( self ):
-        for filepath in sorted( self.cfg_.get("lexicon","files",default=[]) ):
+        filepaths = Loader.findFilesFromPatterns( self.cfg_.get("lexicon","files",default=[]) )
+        for filepath in sorted(filepaths):
             self.load_lexicon( filepath )
             
         self.treeview_.get_selection().select_all()
@@ -40,7 +41,8 @@ class LexiconFilesHandler:
 
 
     def load_lexicon( self, filepath ):
-        cachedLexicon = Loader.loadLexicon( filepath ) #TODO have cached dicts match Selector's Loader
+        #TODO do not cache huge lexicons
+        cachedLexicon = Loader.loadLexicon( filepath )
 
         name = os.path.splitext( os.path.basename( filepath ) )[0]
         wordcount = len( cachedLexicon )
