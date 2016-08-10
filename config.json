@@ -6,13 +6,8 @@
     { "enabled" : true
     }
 , "lexicon" :
-    { "uniform" : false
-    , "ignore-case" : false
-    , "files" :
-      [ "lexicons/viking_female.txt"
-      , "lexicons/viking_male.txt"
-      , "lexicons/viking_unknownGender.txt"
-      ]
+    { "files" :
+      [ "lexicons" ]
     }
 , "tokenizer" :
     { "default" : "unicode"

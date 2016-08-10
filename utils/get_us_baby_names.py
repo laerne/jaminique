@@ -31,6 +31,14 @@ if __name__ != '__main__':
 
 #functions
 def keygenerator( sex, year ):
+    if sex == "M":
+        sex = "male"
+    elif sex == "F":
+        sex = "female"
+    else:
+        sex = "no_gender"
+
+
     mutable_key = []
     for fieldname in fieldnames:
         if fieldname == 'sex':
@@ -80,6 +88,10 @@ if not args.ignore_year: fieldnames += ('year',)
 if args.destination_dir != None:
     destination_dir = args.destination_dir
 
+#Print settings
+print( 'Saving to directory "%s"' % destination_dir )
+print( 'Splitting files according to those criteria : %s' % ", ".join( fieldnames ) )
+
 
 #Build directory if missing
 if not os.path.exists( destination_dir ):
@@ -116,5 +128,5 @@ for key in lexicon:
     destination_path = os.path.join( destination_dir, destination_filename )
     with open( destination_path, 'wt' ) as destination_file:
         for name_and_count in lexicon[key]:
-            destination_file.write( "%s:%d" % name_and_count )
+            destination_file.write( "%s:%d\n" % name_and_count )
 
