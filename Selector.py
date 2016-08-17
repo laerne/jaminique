@@ -16,15 +16,12 @@
 
 from ArgumentTree import ArgumentTree
 import Loader
-import MainFilters
-import Markov
-import SmoothMarkov
-import CompoundWord
+import Tokenizers
+import Generators
+import Filters
 import json
-import MainTokenizers
-import Unidecode
 
-from utilities import warn, fail, InvalidGeneratedWord
+from utilities import warn, fail
 from utilities import DeterministicPicker, GeometricPicker, BinomialPicker, UniformPicker, GaussPicker
 
 import appdirs
@@ -75,7 +72,7 @@ def argumentTreeUpdatedOnBase( initialcfgName, cfgMap, recursive = True ):
     currentcfg = cfgMap[ initialcfgName ].clone()
     
     if not currentcfg.contains('base'):
-        currentcfg.set( initialcfgName, '*base-name' )
+        currentcfg.set( initialcfgName, '<base-name>' )
         return currentcfg
     else:
         newcfg = None
@@ -111,7 +108,7 @@ def selectSubTreeWithBase( cfg, *path ):
 
 def selectTokenizer( cfg, lexicon ):
     tokenizerName, tokenizercfg = selectSubTreeWithBase( cfg, 'tokenizer' )
-    tokenizerAlgorithm = tokenizercfg.get( 'algorithm' ) or tokenizercfg.get( '*base-name' )
+    tokenizerAlgorithm = tokenizercfg.get( 'algorithm' ) or tokenizercfg.get( '<base-name>' )
     
 
     #Solve aliases
@@ -121,15 +118,20 @@ def selectTokenizer( cfg, lexicon ):
 
     #Select algorithm
     if tokenizerAlgorithm == "utf8":
-        tokenizer =  MainTokenizers.UnicodeTokenizer(
-            target_case = tokenizercfg.get( 'case' )
+        tokenizer =  Tokenizers.UnicodeTokenizer(
+            target_case = tokenizercfg.get( 'case' ),
             )
     elif tokenizerAlgorithm == "ll1":
         tokens = tokenizercfg.get( 'token-list', default="" ).split(",")
-        tokenizer =  MainTokenizers.LL1Tokenizer( tokens )
+        tokenizer =  Tokenizers.LL1Tokenizer( tokens )
     elif tokenizerAlgorithm == "unidecode":
-        tokenizer = Unidecode.UnidecodeTokenizer(
-            target_case = tokenizercfg.get( 'case' )
+        tokenizer = Tokenizers.UnidecodeTokenizer(
+            target_case = tokenizercfg.get( 'case' ),
+            )
+    elif tokenizerAlgorithm == "slugify":
+        tokenizer = Tokenizers.SlugifyTokenizer(
+            separator = tokenizercfg.get( 'separator', default=" " ),
+            target_case = tokenizercfg.get( 'case' ),
             )
     else:
         tokenizer = None
@@ -145,11 +147,11 @@ def selectTokenizer( cfg, lexicon ):
 #TODO receive a tokenized lexicon
 def selectGenerator( cfg, lexicon ):
     generatorName, generatorcfg = selectSubTreeWithBase( cfg, 'generator' )
-    generatorAlgorithm = generatorcfg.get( 'algorithm' ) or generatorcfg.get( '*base-name' )
+    generatorAlgorithm = generatorcfg.get( 'algorithm' ) or generatorcfg.get( '<base-name>' )
     
     #Select algorithm
     if generatorAlgorithm == "markov":
-        generator = Markov.Generator( 
+        generator = Generators.MarkovGenerator( 
                 lexicon,
                 nGramLength = generatorcfg.get( 'ngram-size', default=2 ),
                 minNameLength = generatorcfg.get( 'min-length', default=0 ),
@@ -158,7 +160,7 @@ def selectGenerator( cfg, lexicon ):
                 )
 
     elif generatorAlgorithm == "smooth-markov":
-        generator = SmoothMarkov.Generator( 
+        generator = Generators.SmoothMarkovGenerator( 
                 lexicon,
                 minNGramLength = 0,
                 maxNGramLength = generatorcfg.get( 'ngram-size', default=2 ),
@@ -167,7 +169,7 @@ def selectGenerator( cfg, lexicon ):
                 generateDelimiterSymbols = True,
                 )
     elif generatorAlgorithm == "portmanteau":
-        generator = CompoundWord.Generator( 
+        generator = Generators.PortmanteauGenerator( 
                 lexicon,
                 length_rv = DeterministicPicker( value = generatorcfg.get('size') ),
                 )
@@ -189,22 +191,22 @@ def selectFilters( cfg, lexicon ):
 
     #OriginalOnlyFilter
     if filtersCfg.get( 'original' ) == True:
-        filters.append(   MainFilters.OriginalOnlyFilter( lexicon )   )
+        filters.append(   Filters.OriginalOnlyFilter( lexicon )   )
 
     #NameLengthFilter
     minLength = filtersCfg.get( 'min-length', default=0 )
     maxLength = filtersCfg.get( 'max-length', default=float("inf") )
     if minLength > 0 or maxLength < float("inf"):
-        filters.append(   MainFilters.NameLengthFilter( minLength, maxLength )   )
+        filters.append(   Filters.NameLengthFilter( minLength, maxLength )   )
         
     if filtersCfg.contains( 'regex' ):
         pattern = filtersCfg.get( 'regex' )
-        filters.append( MainFilters.RegexFilter( pattern ) )
+        filters.append( Filters.RegexFilter( pattern ) )
 
     if cfg.get('verbose'):
         print( 'Choosing filters using settings %s' % (repr(filtersPresetName)) )
 
-    return MainFilters.AggregateFilter( filters )
+    return Filters.AggregateFilter( filters )
     
 
 def selectLexiconTokenizerGeneratorFilters( cfg ):
@@ -214,6 +216,9 @@ def selectLexiconTokenizerGeneratorFilters( cfg ):
         lexicon = Loader.loadLexiconsFromPatterns( files )
     else:
         lexicon = Loader.loadLexicons( files )
+
+    if len( lexicon ) == 0:
+        raise EmptyLexicon()
 
     tokenizer = selectTokenizer( cfg, lexicon )
     def to_token_sequence( keyval ):
@@ -237,7 +242,7 @@ def generate( cfg ):
             weight, name = 0.0, ""
             try:
                 weight, name = generator.generateName()
-            except InvalidGeneratedWord as e:
+            except Generators.InvalidGeneratedWord as e:
                 if cfg.get( 'verbose', default=False ):
                     try:
                         print("%.4f <!> %s <!> %s" % (e.weight, e.word, str(e) ) )
@@ -295,3 +300,6 @@ class TooManyIterations(Exception):
             self.message = "Reached the iteration ceiling '%d'." % nb_iterations
         super(TooManyIterations,self).__init__( message )
 
+class EmptyLexicon(Exception):
+    def __init__( self ):
+        super(EmptyLexicon,self).__init__( "Cannot generate a word from an empty lexicon" )

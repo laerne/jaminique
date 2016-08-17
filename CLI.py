@@ -84,7 +84,7 @@ arguments.update( cli_arguments )
 
 #Custom tweaking of the arguments based on some CLI values
 if cli_arguments.contains("number"):
-    arguments.set( True, 'gui', '*autogenerate_at_start' )
+    arguments.set( True, 'gui', '<autogenerate_at_start>' )
 
 #Set seed if required
 seedValue = arguments.get('seed',default='auto')

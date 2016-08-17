@@ -149,7 +149,7 @@ class GUIHandler(object):
     def on_generate_button_clicked( self, selection ):
         #TODO use cached small lexicons for name generation too.
         selected_files = list( self.lexicon_files_manager.yield_filepaths_from_selection() )
-        self.arguments.set( selected_files, 'lexicon', '*selected_files' )
+        self.arguments.set( selected_files, 'lexicon', '<selected_files>' )
 
         try:
             for perplexity, name in Selector.generate( self.arguments ):
@@ -213,7 +213,7 @@ def buildGUI( arguments = None ):
 def process( arguments ):
     handler, builder = buildGUI( arguments )
 
-    if arguments.get('gui','*autogenerate_at_start'):
+    if arguments.get('gui','<autogenerate_at_start>'):
         selection = builder.get_object("lexicon_view-selection")
         handler.on_generate_button_clicked( selection )
 

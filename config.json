@@ -27,11 +27,6 @@
             { "algorithm" : "unidecode"
             , "case" : "lower"
             }
-        , "english phonemes" :
-            { "algorithm" : "ll1"
-            , "token-list" : "eau,eue,ewe,ieu,iew,oeu,aa,ah,ae,ai,ao,au,aw,ay,ee,ei,ey,eo,eu,ew,ie,oa,oe,oi,oo,ou,ow,oy,ue,ui,uu,uy,dge,dgi,dgy,pph,rrh,sce,sci,scy,sch,tch,xce,xci,bb,cc,ch,ck,dd,dh,ff,gg,gh,kk,kh,ll,mm,nn,ng,pp,ph,qu,rr,rh,sh,ss,sw,tt,th,vv,wh,wr,xh,zz,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"
-
-            }
         }
     }
 , "generator" :
