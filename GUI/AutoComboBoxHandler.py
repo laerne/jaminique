@@ -35,8 +35,6 @@ class AutoComboBoxHandler:
     def populate_combo_box( self ):
         #self.combo_box_.clear()
 
-        #possible_values = sorted( [ name for name in self.cfg_.get( *self.path_, default={} ).keys()
-        #        if name[0] != '*' and name != "default" ] )
         possible_values = sorted( [ name for name in self.cfg_.get( *self.presets_path_ ) ] )
         self.combo_store_.clear()
         

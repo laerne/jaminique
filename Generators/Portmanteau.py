@@ -16,7 +16,7 @@
 
 from utilities import DiscretePicker
 
-class Generator(object):
+class PortmanteauGenerator(object):
     def __init__(
             self,
             lexicon,
@@ -38,7 +38,7 @@ class Generator(object):
             ith_weight = self.lexicon_[ k ][1]
             
             portmanteau += "".join( ith_word )
-            weight += ith_weight
+            weight += 1/ith_weight
             
-        return weight, portmanteau
+        return (1/weight), portmanteau
             

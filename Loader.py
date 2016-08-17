@@ -58,6 +58,9 @@ def findFilesFromPaths( paths ):
     
             
 def loadLexiconFile( *lexiconFilepaths ):
+    if len(lexiconFilepaths) == 0:
+        return {}
+
     lexicon = {}
     with fileinput.input( lexiconFilepaths, openhook=fileinput.hook_encoded("UTF-8") ) as lines:
         for line in lines:
@@ -72,6 +75,7 @@ def loadLexiconFile( *lexiconFilepaths ):
             except ValueError as e:
                 warn( "Incorrect weight value %s.  Defaulting to 1." % repr(tokens[1]) )
                 weight = 1.0
+
             if word in lexicon:
                 lexicon[word] += weight
             else:
@@ -106,3 +110,13 @@ def mergeLexicons( dictionaries ):
 
 def mergeLexicon( *dictionaries ):
     return mergeLexicons( dictionaries )
+
+class InvalidGeneratedWord(Exception):
+    def __init__( self, message, word, weight ):
+        self.message = message if message != None else "Partially generated word is invalid."
+        self.word = word
+        self.weight = weight
+    def __str__( self ):
+        return self.message
+
+

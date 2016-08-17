@@ -6,16 +6,17 @@ class UnidecodeTokenizer:
         
         #load needed python module
         from unidecode import unidecode
-        self.decode_fct = unidecode
         
         self.case_fct = None
         if target_case == "lower":
-            self.case_fct = str.lower
+            self.decode_fct = lambda x: unidecode(x).lower()
         elif target_case == "upper":
-            self.case_fct = str.upper
+            self.decode_fct = lambda x: unidecode(x).upper()
+        else:
+            self.decode_fct = unidecode
 
     def tokenize( self, name ):
-        return tuple( self.case_fct( self.decode_fct( name ) ) )
+        return tuple( self.decode_fct( name ) )
 
 class SlugifyTokenizer:
     def __init__( self,

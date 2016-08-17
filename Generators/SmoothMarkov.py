@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Jaminique.  If not, see <http://www.gnu.org/licenses/>.
 
-from utilities import perplx, discretepick, warn, fail, InvalidGeneratedWord
+from utilities import perplx, discretepick, warn
+from .Exceptions import InvalidGeneratedWord
 
 INITIAL_CHAR = '\x02'
 TERMINAL_CHAR = '\x03'
@@ -154,7 +155,7 @@ class FunctionalScorer(object):
         yield from sorted( self.scores_.items() )
 
 
-class Generator(object):
+class SmoothMarkovGenerator(object):
     def __init__(
             self,
             dictionary,

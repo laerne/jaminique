@@ -24,6 +24,9 @@ class AutoSpinButtonHandler:
         self.cfg_ = cfg
         self.path_ = cfg_path
         self.type_ = cfg_type
+        
+        #Initialize the value of the spin button
+        self.on_cfg_value_changed()
 
     def on_spin_button_changed( self ):
         value = None
@@ -38,7 +41,7 @@ class AutoSpinButtonHandler:
 
     def on_cfg_value_changed( self ):
         value = self.cfg_.get( *self.path_ )
-        self.spin_button_( float(value) )
+        self.spin_button_.set_value( float(value) )
 
 
     def change_value( self, new_value ):

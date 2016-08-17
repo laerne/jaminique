@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Jaminique.  If not, see <http://www.gnu.org/licenses/>.
 
-from utilities import perplx, discretepick, warn, fail, InvalidGeneratedWord
+from utilities import perplx, discretepick, warn
+from .Exceptions import InvalidGeneratedWord
 
 INITIAL_CHAR = '\x02'
 TERMINAL_CHAR = '\x03'
@@ -104,7 +105,7 @@ def buildTransitionTable(
             prefixCounters[ prefix ][ character ] += weight
     return prefixCounters
 
-class Generator(object):
+class MarkovGenerator(object):
     def __init__(
             self,
             dictionary,
