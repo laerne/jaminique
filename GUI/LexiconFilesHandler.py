@@ -18,16 +18,31 @@ from gi import require_version
 require_version('Gtk','3.0')
 from gi.repository import Gtk
 
+from .GtkUtilities import make_float_data_func
+from utilities import int_to_human_readable_str
+
 import Loader
 import os.path
+import os
 
 class LexiconFilesHandler:
-    def __init__( self, treeview, cfg, cfg_path ):
+    def __init__( self, treeview, cfg, cfg_path, builder=None ):
         self.store_ = treeview.get_model()
         self.treeview_ = treeview
         self.cfg_ = cfg
         self.path_ = cfg_path
-        self.lexiconCache = {}
+        
+        #Set the byte function
+        if builder:
+            def size_data_func( colunmn, cell, model, iter, _ ):
+                    size = model.get(iter,1)[0]
+                    text = "%s" % int_to_human_readable_str( size )
+                    cell.set_property("text", text)
+
+            builder.get_object("column_size").set_cell_data_func(
+                    builder.get_object("size_renderer"), size_data_func )
+            builder.get_object("column_weight").set_cell_data_func(
+                    builder.get_object("weight_renderer"), make_float_data_func("%.2f",2) )
         
         self.populate_lexicon()
     
@@ -41,21 +56,37 @@ class LexiconFilesHandler:
 
 
     def load_lexicon( self, filepath ):
-        #TODO do not cache huge lexicons
-        cachedLexicon = Loader.loadLexicon( filepath )
+        it = self.update_lexicon( filepath )
+        if it == None:
+            return self.append_lexicon( filepath )
+        else:
+            return it
 
+    def append_lexicon( self, filepath ):
         name = os.path.splitext( os.path.basename( filepath ) )[0]
-        wordcount = len( cachedLexicon )
-        weightcount = sum( cachedLexicon.values() )
-
-        store_iterator = self.store_.append( None, (filepath,wordcount,weightcount,name) )
-        self.lexiconCache[ filepath ] = cachedLexicon
+        size = os.stat( filepath ).st_size
+        weight = 1.0
+        store_iterator = self.store_.append( None, (filepath,size,weight,name) )
 
         filepaths_cfg = self.cfg_.get( *list( self.path_ + ['files'] ), default=[] )
         if filepath not in filepaths_cfg:
             filepaths_cfg.append( filepath )
         
         return store_iterator
+    
+    def update_lexicon( self, filepath ):
+        it = self.store_.get_iter_first()
+        while it != None:
+            it_filepath = self.store_.get_value( it, 0 )
+            
+            if it_filepath == filepath:
+                size = os.stat( filepath ).st_size
+                self.store_.set_value( it, 1, size )
+                return it
+                
+            it = self.store_.iter_next( it )
+
+        return None
 
 
 

@@ -98,9 +98,9 @@ def loadLexiconsFromPatterns( patterns ):
     return loadLexiconFile( *findFilesFromPatterns( patterns ) )
 
 
-def mergeLexicons( dictionaries ):
+def mergeLexicons( lexicons ):
     merged = {}
-    for lexicon in dictionaries:
+    for lexicon in lexicons:
         for key, value in lexicon.items():
             if key in merged:
                 merged[key] += value
@@ -108,8 +108,8 @@ def mergeLexicons( dictionaries ):
                 merged[key] = value
     return merged
 
-def mergeLexicon( *dictionaries ):
-    return mergeLexicons( dictionaries )
+def mergeLexicon( *lexicons ):
+    return mergeLexicons( lexicons )
 
 class InvalidGeneratedWord(Exception):
     def __init__( self, message, word, weight ):
