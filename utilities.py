@@ -16,6 +16,7 @@
 
 import random
 import sys
+import math
 
 def printerror( label, *msgs, **kwargs ):
     if 'file' not in kwargs:
@@ -119,3 +120,24 @@ class GaussPicker:
         self.sigma = sigma
     def pick( self ):
         return round( random.gauss( self.mu, self.sigma ) )
+
+
+def int_to_human_readable_str( n ):
+    metric_symbols = ['B', 'kB', 'MB','GB','TB','PB','EB','ZB','YB']
+    
+    if n <= 0:
+        return '%d B' % n
+    
+    decimal_length = math.floor( math.log( float(n), 10 ) )
+    magnitude = decimal_length//3
+    magnitude = min( len(metric_symbols)-1, magnitude )
+    
+    m = n / 10**(magnitude*3)
+    symbol = metric_symbols[magnitude]
+    m_str = "%.3f" % m
+    while m_str[-1] == '0':
+        m_str = m_str[:-1]
+    if m_str[-1] == '.':
+        m_str = m_str[:-1]
+    
+    return "%s %s" % (m_str,symbol)

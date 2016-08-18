@@ -22,7 +22,7 @@ TERMINAL_CHAR = '\x03'
 
 class TransitionTable(object):
     def __init__( self,
-            dictionary,
+            lexicon,
             length = 2,
             ):
         assert type(length) == int
@@ -31,7 +31,7 @@ class TransitionTable(object):
         self.characters_ = set()
         
         self.table_ = buildTransitionTable(
-                dictionary=dictionary,
+                lexicon=lexicon,
                 length=length,
                 encounteredCharacters= self.characters_
                 )
@@ -79,12 +79,12 @@ def normalizeStr( c, l=4 ):
 
 
 def buildTransitionTable(
-        dictionary,
+        lexicon,
         length = 2,
         encounteredCharacters = None ):
 
     prefixCounters = {}
-    for word, weight in dictionary.items():
+    for word, weight in lexicon.items():
         word = (INITIAL_CHAR,) + word + (TERMINAL_CHAR,)
         ngram = ''
         for c in word:
@@ -108,13 +108,13 @@ def buildTransitionTable(
 class MarkovGenerator(object):
     def __init__(
             self,
-            dictionary,
+            lexicon,
             nGramLength,
             minNameLength,
             maxNameLength):
 
         self.nGramLength_ = nGramLength
-        self.transitionTable_ = TransitionTable( dictionary, length = nGramLength+1 )
+        self.transitionTable_ = TransitionTable( lexicon, length = nGramLength+1 )
         self.minNameLength_ = minNameLength
         self.maxNameLength_ = maxNameLength
         

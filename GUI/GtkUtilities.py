@@ -14,10 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Jaminique.  If not, see <http://www.gnu.org/licenses/>.
 
-def writeLexicon( filepath, lexicon ):
-    writeLexiconFromIterator( filepath, lexicon.items() )
-            
-def writeLexiconFromIterator( filepath, lexiconIterator ):
-    with open( filepath, 'wt' ) as outputStream:
-        for word, perplexity in lexiconIterator:
-            outputStream.write( "%s:%f\n" % (word,perplexity) )
+
+def make_float_data_func( pattern, column_index ):
+    def f( colunmn, cell, model, iter, _ ):
+            value = model.get(iter,column_index)[0]
+            text = pattern % value
+            cell.set_property( "text", text )
+    return f

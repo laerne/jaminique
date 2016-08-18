@@ -18,30 +18,39 @@ from gi import require_version
 require_version('Gtk','3.0')
 from gi.repository import Gtk
 
+from .GtkUtilities import make_float_data_func
+
+import Writer
+
 class LexiconHandler:
-    def __init__( self, treeview ):
+    def __init__( self, treeview, builder=None ):
         self.store_ = treeview.get_model()
         self.treeview_ = treeview
-        pass
+        
+        if builder:
+            builder.get_object("column_perplexity").set_cell_data_func(
+                    builder.get_object("perplexity_renderer"), make_float_data_func("%.3f",1) )
+            
 
-    def on_entry_perplexity_edited( self, cell, iterstring, value  ):
+    def on_entry_perplexity_edited( self, cell, iterstring, value ):
+        weight = float( value )
         names_store = self.store_
         iter = names_store.get_iter( iterstring )
-        names_store.set_value( iter, 1, value )
+        names_store.set_value( iter, 1, weight )
 
     def on_entry_name_edited( self, cell, iterstring, value  ):
         names_store = self.store_
         iter = names_store.get_iter( iterstring )
         names_store.set_value( iter, 0, value )
-        names_store.set_value( iter, 1, 0.0 )
 
     def on_add_entry( self, selection ):
+        new_entry_tuple = ("[new]",1.0)
         names_store, row_paths =  selection.get_selected_rows()
         if len(row_paths) == 0:
-            names_store.append(("",0.0))
+            names_store.append(new_entry_tuple)
         else:
             should_be_last_iter = names_store.get_iter( row_paths[-1] )
-            names_store.insert_after( should_be_last_iter, ("",0.0) )
+            names_store.insert_after( should_be_last_iter, new_entry_tuple )
         return True
 
     def on_remove_entry( self, selection ):

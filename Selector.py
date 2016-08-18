@@ -211,7 +211,7 @@ def selectFilters( cfg, lexicon ):
 
 def selectLexiconTokenizerGeneratorFilters( cfg ):
     #TODO cache small lexicons in memory
-    files = cfg.get('lexicon','*selected_files') or cfg.get('lexicon','files') or []
+    files = cfg.get('lexicon','<selected_files>') or cfg.get('lexicon','files') or []
     if cfg.get('lexicon','use_patterns',default=True):
         lexicon = Loader.loadLexiconsFromPatterns( files )
     else:

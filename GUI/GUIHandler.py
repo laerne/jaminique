@@ -76,10 +76,12 @@ class GUIHandler(object):
                 treeview = self.builder.get_object("lexicon_view"),
                 cfg = arguments,
                 cfg_path = ['lexicon'],
+                builder = self.builder,
                 )
         
         self.lexicon_manager = LexiconHandler(
-                treeview = self.builder.get_object("generated_names_view")
+                treeview = self.builder.get_object("generated_names_view"),
+                builder = self.builder,
                 )
 
 
@@ -139,7 +141,7 @@ class GUIHandler(object):
         #TODO use a loader from file first
         for path in row_paths:
             filepath = lexicon_data.get_value( lexicon_data.get_iter( path ), 0 )
-            for word, weight in self.lexicon_files_manager.lexiconCache[ filepath ].items():
+            for word, weight in Loader.loadLexiconFile( filepath ).items():
                 names_store.append((word,weight))
 
 
@@ -161,7 +163,7 @@ class GUIHandler(object):
             dialog = Gtk.MessageDialog(
                     self.builder.get_object("main_window"),
                     0,
-                    Gtk.MessageType.WARNING,
+                    Gtk.MessageType.ERROR,
                     Gtk.ButtonsType.OK,
                     "Generation raised exception of type \"%s\":\n\n\"%s\"" % (type(e).__name__,str(e)) )
             dialog.run()
@@ -174,11 +176,14 @@ class GUIHandler(object):
 
     ### LEXICON DISPLAYER MANAGEMENT ###
 
-    def on_entry_perplexity_edited( self, cell, iterstring, value  ):
-        return self.lexicon_manager.on_save_entries( selection )
+    def on_entry_perplexity_edited( self, cell, iterstring, value ):
+        try:
+            return self.lexicon_manager.on_entry_perplexity_edited( cell, iterstring, value )
+        except ValueError as e:
+            pass
 
     def on_entry_name_edited( self, cell, iterstring, value  ):
-        return self.lexicon_manager.on_save_entries( selection )
+            return self.lexicon_manager.on_entry_name_edited( cell, iterstring, value )
 
     def on_add_entry( self, selection ):
         return self.lexicon_manager.on_add_entry( selection )

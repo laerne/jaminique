@@ -2,18 +2,6 @@
 <!-- Generated with glade 3.19.0 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
-  <object class="GtkTreeStore" id="dictionaries">
-    <columns>
-      <!-- column-name path -->
-      <column type="gchararray"/>
-      <!-- column-name words -->
-      <column type="gint"/>
-      <!-- column-name weight -->
-      <column type="gfloat"/>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-    </columns>
-  </object>
   <object class="GtkListStore" id="filters_presets">
     <columns>
       <!-- column-name name -->
@@ -35,6 +23,18 @@
       <!-- column-name name -->
       <column type="gchararray"/>
       <!-- column-name font -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
+  <object class="GtkTreeStore" id="lexicon_files">
+    <columns>
+      <!-- column-name path -->
+      <column type="gchararray"/>
+      <!-- column-name size -->
+      <column type="gint64"/>
+      <!-- column-name weight -->
+      <column type="gfloat"/>
+      <!-- column-name name -->
       <column type="gchararray"/>
     </columns>
   </object>
@@ -215,19 +215,19 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <child>
-              <object class="GtkBox" id="dictionaries_box">
+              <object class="GtkBox" id="file_management_box">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkScrolledWindow" id="dictionaries_scroller">
+                  <object class="GtkScrolledWindow" id="lexicon_view_scroller">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <child>
                       <object class="GtkTreeView" id="lexicon_view">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="model">dictionaries</property>
+                        <property name="model">lexicon_files</property>
                         <property name="search_column">1</property>
                         <child internal-child="selection">
                           <object class="GtkTreeSelection" id="lexicon_view-selection">
@@ -256,10 +256,10 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkTreeViewColumn" id="column_wordcount">
-                            <property name="title" translatable="yes">words</property>
+                          <object class="GtkTreeViewColumn" id="column_size">
+                            <property name="title" translatable="yes">size</property>
                             <child>
-                              <object class="GtkCellRendererText" id="wordcount_renderer">
+                              <object class="GtkCellRendererText" id="size_renderer">
                                 <property name="cell_background_gdk">#000000000000</property>
                                 <property name="cell_background_rgba">rgba(0,0,0,0)</property>
                                 <property name="xpad">2</property>
@@ -278,10 +278,10 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkTreeViewColumn" id="column_weightcount">
+                          <object class="GtkTreeViewColumn" id="column_weight">
                             <property name="title" translatable="yes">weight</property>
                             <child>
-                              <object class="GtkCellRendererText" id="weightcount_renderer">
+                              <object class="GtkCellRendererText" id="weight_renderer">
                                 <property name="cell_background_gdk">#000000000000</property>
                                 <property name="cell_background_rgba">rgba(0,0,0,0)</property>
                                 <property name="xpad">2</property>
@@ -309,7 +309,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkBox" id="dictionary_buttons_box">
+                  <object class="GtkBox" id="file_management_buttons_box">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="homogeneous">True</property>
@@ -405,13 +405,14 @@
                           <object class="GtkTreeViewColumn" id="column_perplexity">
                             <property name="title" translatable="yes">perplexity</property>
                             <child>
-                              <object class="GtkCellRendererText" id="perpexity_renderer">
+                              <object class="GtkCellRendererText" id="perplexity_renderer">
                                 <property name="cell_background_gdk">#000000000000</property>
                                 <property name="cell_background_rgba">rgba(0,0,0,0)</property>
                                 <property name="xpad">2</property>
                                 <property name="ypad">2</property>
                                 <property name="xalign">0</property>
                                 <property name="background_gdk">#000000000000</property>
+                                <property name="editable">True</property>
                                 <property name="font">Normal</property>
                                 <property name="foreground_gdk">#000000000000</property>
                                 <property name="background_rgba">rgba(0,0,0,0)</property>
